@@ -22,9 +22,9 @@
 		<developer/>
 	</developers>
     <modules>
-        <module>order</module>
-        <module>execution</module>
-        <module>portfolio</module>
+        <module>order-service</module>
+        <module>execution-service</module>
+        <module>portfolio-service</module>
     </modules>
     <scm>
 		<connection/>
