@@ -1,0 +1,337 @@
+DAY 1 — Repo bootstrap + build conventions (multi-module)
+Goal: Create the repository skeleton for 3 Spring Boot services + shared contracts.
+Checklist:
+- Create Maven multi-module: contracts, order-service, execution-service, portfolio-service
+- Add Java 17 toolchain, spring-boot parent, dependencyManagement
+- Add checkstyle/spotless (or formatter), surefire/failsafe split
+- Add basic README with run/test placeholders
+Acceptance:
+- mvn test runs from repo root
+- Each service builds and starts (empty /health)
+
+
+---
+
+DAY 1 — Common observability + logging baseline
+Goal: Consistent logging/trace IDs across services.
+Checklist:
+- Add Spring Boot Actuator to all services
+- Configure JSON logging and correlation ID (MDC) for HTTP + Kafka
+- Expose /actuator/health and /actuator/info
+Acceptance:
+- Logs include correlationId and service name
+- /actuator/health returns UP in each service
+
+
+---
+
+DAY 2 — Contracts module: event schemas + topic naming
+Goal: Define shared DTOs for Kafka events.
+Checklist:
+- Define events: OrdersCreated, OrdersCancelled, OrdersFilled, OrdersRejected
+- Add eventId + occurredAt + payload structure
+- Add topic names/constants in contracts
+Acceptance:
+- All services depend on contracts module
+- DTOs are serializable to/from JSON (Jackson)
+
+
+---
+
+DAY 2 — Order domain model + persistence (Postgres)
+Goal: Implement Order aggregate + JPA mapping.
+Checklist:
+- Order entity: id, accountId, symbol, side, type, qty, limitPrice, status, timestamps, version
+- Flyway migration V1 for orders table
+- Repository + basic service layer
+Acceptance:
+- Order can be saved/loaded from Postgres
+- Optimistic locking enabled via @Version
+
+
+---
+
+DAY 3 — Order REST API: create order (no Kafka yet)
+Goal: HTTP endpoint to create orders with validation.
+Checklist:
+- POST /api/v1/orders request/response models
+- Validate: qty>0, LIMIT requires limitPrice, symbol format basic
+- CreateOrder use case -> persists order as NEW/ACCEPTED (choose one)
+- Error mapping (400/422) with consistent JSON error body
+Acceptance:
+- Integration test: POST creates order, GET returns it
+
+
+---
+
+DAY 3 — Order REST API: get order + list by account
+Goal: Read endpoints for demo + debugging.
+Checklist:
+- GET /api/v1/orders/{id}
+- GET /api/v1/orders?accountId=...
+Acceptance:
+- Paging supported (page/size) or simple limit
+- Integration tests for both endpoints
+
+
+---
+
+DAY 4 — Kafka local wiring in docker-compose
+Goal: Bring up Kafka + Postgres for local development.
+Checklist:
+- docker-compose with kafka (kraft or zookeeper), postgres-order, postgres-portfolio
+- Document env vars and ports in README
+Acceptance:
+- `docker compose up` starts dependencies cleanly
+
+
+---
+
+DAY 4 — Order-service: publish orders.created to Kafka
+Goal: Emit event when order is accepted.
+Checklist:
+- Spring Kafka producer config (JSON)
+- Publish OrdersCreated event after DB save
+- Add message key = orderId
+Acceptance:
+- Manual test: creating order produces message on orders.created
+- Producer unit test or slice test verifies send called
+
+
+---
+
+DAY 5 — Execution-service skeleton + Kafka consumer
+Goal: Consumer for orders.created.
+Checklist:
+- Spring Boot worker app + Kafka consumer config
+- Consume OrdersCreated and log/validate payload
+- Add basic retry/backoff and DLQ topic config (names only is OK)
+Acceptance:
+- When orders.created arrives, consumer processes it (log shows)
+
+
+---
+
+DAY 5 — Execution simulator: price generation + fill decisions
+Goal: Turn created orders into filled/rejected.
+Checklist:
+- Deterministic price generator per symbol (seeded RNG)
+- MARKET fills immediately; LIMIT fills if price crosses
+- Optionally split into 2 partial fills
+Acceptance:
+- Unit tests for MARKET and LIMIT behavior
+
+
+---
+
+DAY 6 — Execution-service: publish orders.filled / orders.rejected
+Goal: Emit result events.
+Checklist:
+- Publish OrdersFilled with fillId(s), qty, price, timestamps
+- Publish OrdersRejected for simulated failures
+- Ensure idempotency strategy defined (eventId/fillId uniqueness)
+Acceptance:
+- Creating an order leads to a filled event visible on Kafka
+
+
+---
+
+DAY 6 — Order-service: consume fill/reject events and update status
+Goal: Keep order status in sync.
+Checklist:
+- Kafka consumer for orders.filled and orders.rejected
+- Update order status: PARTIALLY_FILLED/FILLED/REJECTED
+- Store fill records (optional) in fills table + Flyway migration V2
+Acceptance:
+- Integration test with embedded Kafka: create order -> status becomes FILLED
+
+
+---
+
+DAY 7 — Portfolio-service: DB schema + entities
+Goal: Own portfolio state.
+Checklist:
+- Flyway V1: accounts, account_limits, positions, processed_events
+- JPA entities + repositories
+- Seed data strategy for demo (data.sql or migration)
+Acceptance:
+- Can create account + limits and read them from DB
+
+
+---
+
+DAY 7 — Portfolio-service: consume orders.filled and apply to positions
+Goal: Update positions transactionally.
+Checklist:
+- Kafka consumer for orders.filled
+- Upsert (accountId, symbol) position and recompute avg price
+- Persist processed_events for idempotency
+Acceptance:
+- Duplicate event does not double-apply (tested)
+
+
+---
+
+DAY 8 — Risk engine: margin + position limits
+Goal: Implement risk checks used pre-trade.
+Checklist:
+- Compute notional = qty * priceHint
+- requiredMargin = notional * marginRate
+- Deny if requiredMargin > availableMargin (equity - usedMargin placeholder)
+- Deny if abs(newNetQty) > maxPositionPerSymbol
+Acceptance:
+- Unit tests cover allow/deny scenarios and edge cases
+
+
+---
+
+DAY 8 — gRPC API: define .proto + generate stubs
+Goal: Portfolio exposes CheckOrderRisk over gRPC.
+Checklist:
+- Add .proto in contracts or portfolio module
+- Define CheckOrderRisk request/response (allowed, reason, requiredMargin, availableMargin)
+- Generate Java stubs (protobuf-maven-plugin)
+Acceptance:
+- Portfolio-service starts gRPC server; basic client call works in test
+
+
+---
+
+DAY 9 — Order-service: gRPC client to portfolio risk check
+Goal: Pre-trade validation via gRPC.
+Checklist:
+- Add gRPC client config (host/port via env)
+- On POST /orders call CheckOrderRisk
+- If denied: persist REJECTED + return 409/422 with reason
+Acceptance:
+- Integration test: order rejected when limits exceeded
+
+
+---
+
+DAY 9 — End-to-end demo flow (compose)
+Goal: Smooth demo of create -> fill -> portfolio update.
+Checklist:
+- Compose wires service-to-service networking
+- Script or curl examples in README
+Acceptance:
+- One command starts stack; curl shows order FILLED and position updated
+
+
+---
+
+DAY 10 — Testcontainers: integration tests per service
+Goal: “Senior” testing story.
+Checklist:
+- Order-service: Postgres + Kafka Testcontainers
+- Portfolio-service: Postgres + Kafka Testcontainers
+- Execution-service: Kafka Testcontainer (optional)
+Acceptance:
+- `mvn verify` runs integration tests locally
+
+
+---
+
+DAY 10 — BDD-style scenarios (Cucumber or Given/When/Then JUnit)
+Goal: Show TDD/BDD mindset.
+Checklist:
+- Scenario 1: market order accepted and filled
+- Scenario 2: order rejected due to margin
+- Scenario 3: duplicate fill event idempotent
+Acceptance:
+- Scenarios run in CI and pass deterministically
+
+
+---
+
+DAY 11 — Reliability: retries, DLQ, idempotency hardening
+Goal: Production-ish behavior for Kafka flows.
+Checklist:
+- Configure retries/backoff in consumers
+- Route poison messages to DLQ topic
+- Add processed_events usage where missing
+Acceptance:
+- Test demonstrates failed message goes to DLQ (can be lightweight)
+
+
+---
+
+DAY 11 — Security (optional but nice): simple JWT on order REST API
+Goal: Demonstrate Spring Security.
+Checklist:
+- Add JWT filter (resource server) or simple symmetric token validation
+- Protect POST /orders and cancel endpoints
+Acceptance:
+- Unauthorized request returns 401; authorized succeeds
+
+
+---
+
+DAY 12 — CI/CD: GitHub Actions pipeline
+Goal: CI automation box checked.
+Checklist:
+- Workflow: build, unit tests, integration tests, jacoco coverage
+- Cache Maven deps
+- (Optional) build Docker images
+Acceptance:
+- PR/commit triggers pipeline; green build required
+
+
+---
+
+DAY 12 — Docker images for each service
+Goal: Containerize.
+Checklist:
+- Dockerfile per service (layered jar or spring boot buildpacks)
+- Compose uses built images
+Acceptance:
+- `docker compose up --build` works from clean checkout
+
+
+---
+
+DAY 13 — Kubernetes manifests (minimal)
+Goal: K8s experience checkbox.
+Checklist:
+- k8s/ directory: deployments + services + configmaps
+- Document how to run (kind/minikube) in README
+Acceptance:
+- Manifests are valid; services start (even if kafka/postgres remain “dev only”)
+
+
+---
+
+DAY 13 — Metrics + dashboards (lightweight)
+Goal: Observability polish.
+Checklist:
+- Enable Prometheus endpoint via Actuator
+- Expose JVM + http server metrics
+- (Optional) add a minimal Grafana/Prometheus compose profile
+Acceptance:
+- /actuator/prometheus returns metrics
+
+
+---
+
+DAY 14 — Documentation: architecture + tradeoffs + runbooks
+Goal: Make it readable to reviewers.
+Checklist:
+- README: architecture diagram (ASCII ok), service roles, topics, DB schemas
+- “Tradeoffs” section: outbox, exactly-once, ordering, idempotency
+- Runbook: how to run locally, how to run tests, sample curls
+Acceptance:
+- A new reader can run demo in <10 minutes
+
+
+---
+
+DAY 14 — Final hardening + polish sweep
+Goal: Ship quality.
+Checklist:
+- Lint/format pass
+- Remove TODOs, add error messages and consistent HTTP status codes
+- Verify cancel behavior + edge cases
+- Tag release v0.1.0
+Acceptance:
+- Demo script works end-to-end and tests are green
+
