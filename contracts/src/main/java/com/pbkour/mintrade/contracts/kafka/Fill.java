@@ -7,8 +7,8 @@ import java.util.UUID;
 
 @Data
 public class Fill {
-    UUID fillId;
-    long quantity;
-    double price;
-    Instant timestamp;
+    private UUID fillId;
+    private long quantity;
+    private double price;
+    private Instant timestamp;
 }

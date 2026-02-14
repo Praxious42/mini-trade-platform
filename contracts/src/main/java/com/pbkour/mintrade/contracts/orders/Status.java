@@ -6,5 +6,5 @@ public enum Status {
     PARTIAL_FILLED,
     FILLED,
     CANCELLED,
-    REJECTED,
+    REJECTED
 }
