@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,7 +100,7 @@ class OrderServiceTest {
             .version(0)
             .build();
 
-        when(ordersRepository.getReferenceById(id)).thenReturn(entity);
+        when(ordersRepository.findById(id)).thenReturn(Optional.of(entity));
 
         Order returned = orderService.getOrder(id);
 
