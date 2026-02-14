@@ -5,6 +5,7 @@ import com.pbkour.mintrade.contracts.dto.Order;
 import com.pbkour.mintrade.contracts.orders.Status;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.StandardException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -26,8 +27,6 @@ public class OrderService {
             .quantity(order.getQuantity())
             .limitPrice(order.getLimitPrice())
             .status(Status.NEW)
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
             .version(0)
             .build();
 
@@ -37,7 +36,9 @@ public class OrderService {
     }
 
     public Order getOrder(UUID id) {
-        return ordersRepository.getReferenceById(id).mapToOrder();
+        return ordersRepository.findById(id)
+            .map(OrderEntity::mapToOrder)
+            .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
     }
 
     public List<Order> getAccountOrders(UUID accountId) {
@@ -51,5 +52,9 @@ public class OrderService {
                 order.setUpdatedAt(Instant.now());
                 ordersRepository.save(order);
             });
+    }
+
+    @StandardException
+    public static class OrderNotFoundException extends RuntimeException {
     }
 }

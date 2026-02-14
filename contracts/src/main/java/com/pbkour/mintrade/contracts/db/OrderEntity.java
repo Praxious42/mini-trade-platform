@@ -52,6 +52,20 @@ public class OrderEntity {
     @Column(name = "version", nullable = false)
     private int version;
 
+    @PrePersist
+    public void prePersistUpdate() {
+        Instant now = Instant.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = Instant.now();
+    }
+
     public Order mapToOrder() {
         return Order.builder()
             .accountId(this.accountId)
