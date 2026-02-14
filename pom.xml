@@ -15,25 +15,31 @@
     <name>mini-trade-platform</name>
     <description>Demo project for a mini trade platform</description>
     <url/>
+
     <licenses>
         <license/>
     </licenses>
+
     <developers>
         <developer/>
     </developers>
+
     <modules>
         <module>order-service</module>
         <module>execution-service</module>
         <module>portfolio-service</module>
         <module>contracts</module>
     </modules>
+
     <scm>
         <connection/>
         <developerConnection/>
         <tag/>
         <url/>
     </scm>
+
     <properties>
+        <my-project-version>1.0.0</my-project-version>
         <java.version>17</java.version>
     </properties>
     <dependencies>
