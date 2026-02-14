@@ -1,0 +1,132 @@
+package com.pbkour.mintrade.order.controllers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.contracts.dto.Order;
+import com.pbkour.mintrade.contracts.json.ObjectMapperFactory;
+import com.pbkour.mintrade.contracts.orders.Side;
+import com.pbkour.mintrade.contracts.orders.Symbol;
+import com.pbkour.mintrade.contracts.orders.Type;
+import com.pbkour.mintrade.order.services.OrderService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@ExtendWith(MockitoExtension.class)
+class OrderControllerTest {
+
+    private final ObjectMapper mapper = ObjectMapperFactory.objectMapper();
+    private MockMvc mockMvc;
+    @Mock
+    private OrderService orderService;
+
+    @InjectMocks
+    private OrderController controller;
+
+    @Captor
+    private ArgumentCaptor<Order> orderCaptor;
+
+    @BeforeEach
+    void setup() {
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
+
+    @Test
+    void createOrder_delegatesToService_andReturnsOk() throws Exception {
+        UUID returnedId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        when(orderService.createOrder(any(Order.class))).thenReturn(returnedId);
+
+        String json = new String(getClass().getResourceAsStream("/order-request.json").readAllBytes());
+
+        mockMvc.perform(post("/api/v1/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Creating resource")));
+
+        verify(orderService, times(1)).createOrder(orderCaptor.capture());
+        Order captured = orderCaptor.getValue();
+        assertEquals(UUID.fromString("22222222-2222-2222-2222-222222222222"), captured.getAccountId());
+        assertEquals(Symbol.AAPL, captured.getSymbol());
+        assertEquals(Side.BUY, captured.getSide());
+        assertEquals(Type.LIMIT, captured.getType());
+        assertEquals(Long.valueOf(100L), captured.getQuantity());
+        assertEquals(new BigDecimal("150.50"), captured.getLimitPrice());
+    }
+
+    @Test
+    void cancelOrder_delegatesToService_andReturnsOk() throws Exception {
+        UUID id = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+        doNothing().when(orderService).cancelOrder(id);
+
+        mockMvc.perform(post("/api/v1/orders/" + id + "/cancel"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString(id.toString())));
+
+        verify(orderService, times(1)).cancelOrder(id);
+    }
+
+    @Test
+    void getOrder_returnsOrderFromService() throws Exception {
+        UUID id = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        Order returned = Order.builder()
+            .accountId(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+            .symbol(Symbol.AAPL)
+            .side(Side.BUY)
+            .type(Type.LIMIT)
+            .quantity(100L)
+            .limitPrice(new BigDecimal("150.50"))
+            .build();
+
+        when(orderService.getOrder(id)).thenReturn(returned);
+
+        mockMvc.perform(get("/api/v1/orders/" + id))
+            .andExpect(status().isOk())
+            .andExpect(content().json(mapper.writeValueAsString(returned)));
+
+        verify(orderService, times(1)).getOrder(id);
+    }
+
+    @Test
+    void listOrdersByAccount_returnsListFromService() throws Exception {
+        UUID accountId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        Order o1 = Order.builder()
+            .accountId(accountId)
+            .symbol(Symbol.AAPL)
+            .side(Side.BUY)
+            .type(Type.LIMIT)
+            .quantity(100L)
+            .limitPrice(new BigDecimal("150.50"))
+            .build();
+
+        when(orderService.getAccountOrders(accountId)).thenReturn(List.of(o1));
+
+        mockMvc.perform(get("/api/v1/orders").param("accountId", accountId.toString()))
+            .andExpect(status().isOk())
+            .andExpect(content().json(mapper.writeValueAsString(List.of(o1))));
+
+        verify(orderService, times(1)).getAccountOrders(accountId);
+    }
+}
+

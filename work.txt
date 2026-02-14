@@ -1,16 +1,3 @@
-DAY 2 — Order domain model + persistence (Postgres)
-Goal: Implement Order aggregate + JPA mapping.
-Checklist:
-- Order entity: id, accountId, symbol, side, type, qty, limitPrice, status, timestamps, version
-- Flyway migration V1 for orders table
-- Repository + basic service layer
-Acceptance:
-- Order can be saved/loaded from Postgres
-- Optimistic locking enabled via @Version
-
-
----
-
 DAY 3 — Order REST API: create order (no Kafka yet)
 Goal: HTTP endpoint to create orders with validation.
 Checklist:

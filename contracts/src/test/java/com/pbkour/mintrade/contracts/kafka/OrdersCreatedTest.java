@@ -5,6 +5,7 @@ import com.pbkour.mintrade.contracts.json.ObjectMapperFactory;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,7 +23,7 @@ class OrdersCreatedTest {
             assertNotNull(payload.getEventId());
             assertNotNull(payload.getOccurredAt());
             assertNotNull(payload.getOrder());
-            assertEquals(150.5, payload.getOrder().getLimitPrice());
+            assertEquals(BigDecimal.valueOf(150.5), payload.getOrder().getLimitPrice());
 
             // round-trip
             String json = mapper.writeValueAsString(payload);
