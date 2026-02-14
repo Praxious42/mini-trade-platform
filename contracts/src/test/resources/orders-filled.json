@@ -1,0 +1,22 @@
+{
+  "eventId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+  "occurredAt": "2025-03-03T09:15:00Z",
+  "orderId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  "accountId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "symbol": "EURUSD",
+  "fills": [
+    {
+      "fillId": "44444444-4444-4444-4444-444444444444",
+      "quantity": 50,
+      "price": 1.2345,
+      "timestamp": "2025-03-03T09:15:01Z"
+    },
+    {
+      "fillId": "55555555-5555-5555-5555-555555555555",
+      "quantity": 50,
+      "price": 1.2346,
+      "timestamp": "2025-03-03T09:15:02Z"
+    }
+  ]
+}
+
