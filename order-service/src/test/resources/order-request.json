@@ -1,0 +1,9 @@
+{
+  "accountId": "22222222-2222-2222-2222-222222222222",
+  "symbol": "AAPL",
+  "side": "BUY",
+  "type": "LIMIT",
+  "quantity": 100,
+  "limitPrice": 150.50
+}
+
