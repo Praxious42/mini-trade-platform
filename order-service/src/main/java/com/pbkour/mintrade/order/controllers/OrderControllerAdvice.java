@@ -43,5 +43,19 @@ public class OrderControllerAdvice {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    @ExceptionHandler(OrderController.OrderControllerValidationException.class)
+    public ResponseEntity<Object> handleMessageNotReadable(OrderController.OrderControllerValidationException ex, WebRequest request) {
+        log.info("Could not validate request parameters: {}", ex.getMessage());
+
+        Map<String, Object> body = Map.of(
+            "timestamp", Instant.now().toString(),
+            "status", HttpStatus.BAD_REQUEST.value(),
+            "error", "Bad Request",
+            "message", "Could not validate request parameters"
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 }
 
