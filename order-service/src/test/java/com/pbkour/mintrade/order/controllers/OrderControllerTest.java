@@ -169,5 +169,32 @@ class OrderControllerTest {
 
         verify(orderService, times(1)).getAccountOrders(accountId, 0, 1);
     }
-}
 
+    @Test
+    void listOrdersByAccount_negativePage_returnsBadRequest() throws Exception {
+        UUID accountId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
+        mockMvc.perform(get("/api/v1/orders")
+                .param("accountId", accountId.toString())
+                .param("page", "-1")
+                .param("size", "10"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string(containsString("Could not validate request parameters")));
+
+        verify(orderService, never()).getAccountOrders(any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
+    }
+
+    @Test
+    void listOrdersByAccount_sizeTooLarge_returnsBadRequest() throws Exception {
+        UUID accountId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
+        mockMvc.perform(get("/api/v1/orders")
+                .param("accountId", accountId.toString())
+                .param("page", "0")
+                .param("size", "101"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string(containsString("Could not validate request parameters")));
+
+        verify(orderService, never()).getAccountOrders(any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
+    }
+}

@@ -46,13 +46,10 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Order>> listOrdersByAccount(@RequestParam UUID accountId, @RequestParam int page, @RequestParam int size) {
+    public ResponseEntity<List<Order>> listOrdersByAccount(@RequestParam UUID accountId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         log.info("Received order retrieval request for account: {}", accountId);
-        if (accountId == null) {
-            throw new OrderControllerValidationException("Account ID must be provided");
-        }
         if (page < 0) {
-            throw new OrderControllerValidationException("Page must be non-negative and size must be positive");
+            throw new OrderControllerValidationException("Page must be non-negative");
         }
         if (size > 100) {
             throw new OrderControllerValidationException("Size must not exceed 100");

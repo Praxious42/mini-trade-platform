@@ -44,10 +44,10 @@ public class OrderService {
     }
 
     public List<Order> getAccountOrders(UUID accountId, int page, int size) {
-        Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt").descending();
+        Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
         PageRequest pageRequest = PageRequest.of(page, size, sort);
 
-        return ordersRepository.findByAccountId(accountId, pageRequest).stream().map(OrderEntity::mapToOrder).toList();
+        return ordersRepository.findByAccountId(accountId, pageRequest).getContent().stream().map(OrderEntity::mapToOrder).toList();
     }
 
     public void cancelOrder(UUID id) {
