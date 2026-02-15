@@ -1,16 +1,3 @@
-DAY 3 — Order REST API: create order (no Kafka yet)
-Goal: HTTP endpoint to create orders with validation.
-Checklist:
-- POST /api/v1/orders request/response models
-- Validate: qty>0, LIMIT requires limitPrice, symbol format basic
-- CreateOrder use case -> persists order as NEW/ACCEPTED (choose one)
-- Error mapping (400/422) with consistent JSON error body
-Acceptance:
-- Integration test: POST creates order, GET returns it
-
-
----
-
 DAY 3 — Order REST API: get order + list by account
 Goal: Read endpoints for demo + debugging.
 Checklist:

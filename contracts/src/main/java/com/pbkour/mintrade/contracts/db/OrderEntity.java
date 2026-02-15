@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.StandardException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -53,17 +54,17 @@ public class OrderEntity {
     private int version;
 
     @PrePersist
-    public void prePersistUpdate() {
+    public void prePersistUpdate() throws OrderEntityValidationException {
         Instant now = Instant.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
+        createdAt = now;
         updatedAt = now;
+        validate();
     }
 
     @PreUpdate
-    public void preUpdate() {
+    public void preUpdate() throws OrderEntityValidationException {
         updatedAt = Instant.now();
+        validate();
     }
 
     public Order mapToOrder() {
@@ -74,6 +75,36 @@ public class OrderEntity {
             .type(this.type)
             .quantity(this.quantity)
             .limitPrice(this.limitPrice)
+            .createdAt(this.createdAt)
+            .updatedAt(this.updatedAt)
             .build();
+    }
+
+    private void validate() throws OrderEntityValidationException {
+        if (accountId == null) {
+            throw new OrderEntityValidationException("Account ID must be specified");
+        }
+        if (symbol == null) {
+            throw new OrderEntityValidationException("Symbol must be specified");
+        }
+        if (side == null) {
+            throw new OrderEntityValidationException("Side must be specified");
+        }
+        if (type == null) {
+            throw new OrderEntityValidationException("Type must be specified");
+        }
+        if (quantity == null || quantity <= 0) {
+            throw new OrderEntityValidationException("Quantity must be a positive number");
+        }
+        if (type == Type.LIMIT && (limitPrice == null || limitPrice.compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new OrderEntityValidationException("Limit price must be a positive number for limit orders");
+        }
+        if (status == null) {
+            throw new OrderEntityValidationException("Status must be specified");
+        }
+    }
+
+    @StandardException
+    public static class OrderEntityValidationException extends RuntimeException {
     }
 }
