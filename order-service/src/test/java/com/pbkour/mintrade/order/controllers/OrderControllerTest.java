@@ -1,6 +1,7 @@
 package com.pbkour.mintrade.order.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.contracts.db.OrderEntity.OrderEntityValidationException;
 import com.pbkour.mintrade.contracts.dto.Order;
 import com.pbkour.mintrade.contracts.json.ObjectMapperFactory;
 import com.pbkour.mintrade.contracts.orders.Side;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -48,7 +50,9 @@ class OrderControllerTest {
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(new OrderControllerAdvice())
+            .build();
     }
 
     @Test
@@ -72,6 +76,35 @@ class OrderControllerTest {
         assertEquals(Type.LIMIT, captured.getType());
         assertEquals(Long.valueOf(100L), captured.getQuantity());
         assertEquals(new BigDecimal("150.50"), captured.getLimitPrice());
+    }
+
+    @Test
+    void createOrder_whenValidationException_returnsBadRequest() throws Exception {
+        when(orderService.createOrder(any(Order.class))).thenThrow(new OrderEntityValidationException());
+
+        try (InputStream in = getClass().getResourceAsStream("/order-request.json")) {
+            assert in != null;
+            mockMvc.perform(post("/api/v1/orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(new String(in.readAllBytes())))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Validation failed for order")));
+
+            verify(orderService, times(1)).createOrder(any());
+        }
+    }
+
+    @Test
+    void createOrder_withMalformedJson_returnsBadRequest() throws Exception {
+        String badJson = "{ invalid json }";
+
+        mockMvc.perform(post("/api/v1/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(badJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string(containsString("Malformed JSON request")));
+
+        verify(orderService, never()).createOrder(any());
     }
 
     @Test
