@@ -22,11 +22,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,10 +85,10 @@ class OrderControllerTest {
         when(orderService.createOrder(any(Order.class))).thenThrow(new OrderEntityValidationException());
 
         try (InputStream in = getClass().getResourceAsStream("/order-request.json")) {
-            assert in != null;
+            assertNotNull(in);
             mockMvc.perform(post("/api/v1/orders")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(new String(in.readAllBytes())))
+                    .content(new String(in.readAllBytes(), StandardCharsets.UTF_8)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Validation failed for order")));
 

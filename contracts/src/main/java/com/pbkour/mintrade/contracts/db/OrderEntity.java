@@ -90,6 +90,9 @@ public class OrderEntity {
         if (side == null) {
             throw new OrderEntityValidationException("Side must be specified");
         }
+        if (type == null) {
+            throw new OrderEntityValidationException("Type must be specified");
+        }
         if (quantity == null || quantity <= 0) {
             throw new OrderEntityValidationException("Quantity must be a positive number");
         }

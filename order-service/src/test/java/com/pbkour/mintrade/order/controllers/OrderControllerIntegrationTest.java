@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 class OrderControllerIntegrationTest {
 
     private final ObjectMapper mapper = ObjectMapperFactory.objectMapper();
@@ -45,7 +46,7 @@ class OrderControllerIntegrationTest {
 
     @Test
     void createThenGetOrder_returnsSameOrder() throws Exception {
-        String json = new String(Objects.requireNonNull(getClass().getResourceAsStream("/order-request.json")).readAllBytes());
+        String json = new String(Objects.requireNonNull(getClass().getResourceAsStream("/order-request.json")).readAllBytes(), StandardCharsets.UTF_8);
 
         mockMvc.perform(post("/api/v1/orders")
                 .contentType(MediaType.APPLICATION_JSON)
