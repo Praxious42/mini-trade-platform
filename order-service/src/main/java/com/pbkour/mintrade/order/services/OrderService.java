@@ -6,6 +6,8 @@ import com.pbkour.mintrade.contracts.orders.Status;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -41,8 +43,11 @@ public class OrderService {
             .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
     }
 
-    public List<Order> getAccountOrders(UUID accountId) {
-        return ordersRepository.findByAccountId(accountId).stream().map(OrderEntity::mapToOrder).toList();
+    public List<Order> getAccountOrders(UUID accountId, int page, int size) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt").descending();
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
+
+        return ordersRepository.findByAccountId(accountId, pageRequest).stream().map(OrderEntity::mapToOrder).toList();
     }
 
     public void cancelOrder(UUID id) {

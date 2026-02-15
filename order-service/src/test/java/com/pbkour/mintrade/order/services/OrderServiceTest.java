@@ -14,6 +14,8 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -125,9 +127,9 @@ class OrderServiceTest {
             .version(0)
             .build();
 
-        when(ordersRepository.findByAccountId(accountId)).thenReturn(List.of(entity));
+        when(ordersRepository.findByAccountId(eq(accountId), any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(entity)));
 
-        List<Order> orders = orderService.getAccountOrders(accountId);
+        List<Order> orders = orderService.getAccountOrders(accountId, 0, 1);
 
         assertEquals(1, orders.size());
         assertEquals(accountId, orders.get(0).getAccountId());

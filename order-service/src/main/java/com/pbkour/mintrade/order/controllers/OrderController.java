@@ -3,6 +3,7 @@ package com.pbkour.mintrade.order.controllers;
 import com.pbkour.mintrade.contracts.dto.Order;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,9 +46,22 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Order>> listOrdersByAccount(@RequestParam UUID accountId) {
+    public ResponseEntity<List<Order>> listOrdersByAccount(@RequestParam UUID accountId, @RequestParam int page, @RequestParam int size) {
         log.info("Received order retrieval request for account: {}", accountId);
+        if (accountId == null) {
+            throw new OrderControllerValidationException("Account ID must be provided");
+        }
+        if (page < 0) {
+            throw new OrderControllerValidationException("Page must be non-negative and size must be positive");
+        }
+        if (size > 100) {
+            throw new OrderControllerValidationException("Size must not exceed 100");
+        }
 
-        return ResponseEntity.ok(orderService.getAccountOrders(accountId));
+        return ResponseEntity.ok(orderService.getAccountOrders(accountId, page, size));
+    }
+
+    @StandardException
+    public static class OrderControllerValidationException extends RuntimeException {
     }
 }

@@ -62,22 +62,25 @@ class OrderControllerTest {
         UUID returnedId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         when(orderService.createOrder(any(Order.class))).thenReturn(returnedId);
 
-        String json = new String(getClass().getResourceAsStream("/order-request.json").readAllBytes());
+        try (InputStream in = getClass().getResourceAsStream("/order-request.json")) {
+            assertNotNull(in);
+            String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
 
-        mockMvc.perform(post("/api/v1/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-            .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Creating resource")));
+            mockMvc.perform(post("/api/v1/orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Creating resource")));
 
-        verify(orderService, times(1)).createOrder(orderCaptor.capture());
-        Order captured = orderCaptor.getValue();
-        assertEquals(UUID.fromString("22222222-2222-2222-2222-222222222222"), captured.getAccountId());
-        assertEquals(Symbol.AAPL, captured.getSymbol());
-        assertEquals(Side.BUY, captured.getSide());
-        assertEquals(Type.LIMIT, captured.getType());
-        assertEquals(Long.valueOf(100L), captured.getQuantity());
-        assertEquals(new BigDecimal("150.50"), captured.getLimitPrice());
+            verify(orderService, times(1)).createOrder(orderCaptor.capture());
+            Order captured = orderCaptor.getValue();
+            assertEquals(UUID.fromString("22222222-2222-2222-2222-222222222222"), captured.getAccountId());
+            assertEquals(Symbol.AAPL, captured.getSymbol());
+            assertEquals(Side.BUY, captured.getSide());
+            assertEquals(Type.LIMIT, captured.getType());
+            assertEquals(Long.valueOf(100L), captured.getQuantity());
+            assertEquals(new BigDecimal("150.50"), captured.getLimitPrice());
+        }
     }
 
     @Test
@@ -155,13 +158,16 @@ class OrderControllerTest {
             .limitPrice(new BigDecimal("150.50"))
             .build();
 
-        when(orderService.getAccountOrders(accountId)).thenReturn(List.of(o1));
+        when(orderService.getAccountOrders(accountId, 0, 1)).thenReturn(List.of(o1));
 
-        mockMvc.perform(get("/api/v1/orders").param("accountId", accountId.toString()))
+        mockMvc.perform(get("/api/v1/orders")
+                .param("accountId", accountId.toString())
+                .param("page", "0")
+                .param("size", "1"))
             .andExpect(status().isOk())
             .andExpect(content().json(mapper.writeValueAsString(List.of(o1))));
 
-        verify(orderService, times(1)).getAccountOrders(accountId);
+        verify(orderService, times(1)).getAccountOrders(accountId, 0, 1);
     }
 }
 

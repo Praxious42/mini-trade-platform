@@ -56,7 +56,7 @@ class OrderControllerIntegrationTest {
         JsonNode node = mapper.readTree(json);
         UUID accountId = UUID.fromString(node.get("accountId").asText());
 
-        List<OrderEntity> entities = ordersRepository.findByAccountId(accountId);
+        List<OrderEntity> entities = ordersRepository.findByAccountId(accountId, null).getContent();
         assertThat(entities).isNotNull().hasSizeGreaterThanOrEqualTo(1);
 
         OrderEntity created = entities.stream()
