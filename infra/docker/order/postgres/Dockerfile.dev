@@ -1,13 +1,8 @@
-# Dockerfile.dev - developer convenience image that copies initdb.d into the image
-# Build from db-migrations/docker as the build context:
-#   cd db-migrations/docker
-#   docker build -f postgres/Dockerfile.dev -t mini-trade-postgres:dev .
-
 FROM postgres:15
 
 ARG POSTGRES_USER=postgres
 ARG POSTGRES_PASSWORD=postgres
-ARG POSTGRES_DB=mintrade
+ARG POSTGRES_DB=mintrade-order
 
 ENV POSTGRES_USER=${POSTGRES_USER}
 ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -25,7 +20,7 @@ EXPOSE 5432
 
 # To build:
 #   cd db-migrations/docker
-#   docker build -f postgres/Dockerfile.dev -t mini-trade-postgres:dev .
+#   docker build -f postgres/Dockerfile.dev -t mintrade-postgres-order:dev .
 # To run:
-#   docker run --rm -d --name mini-trade-postgres -p 1234:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB=mintrade -v mini_trade_pgdata:/var/lib/postgresql/data mini-trade-postgres:dev
+#   docker run --rm -d --name mintrade-postgres-order -p 1234:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB=mintrade-order -v mintrade_pgdata_order:/var/lib/postgresql/data mintrade-postgres-order:dev
 

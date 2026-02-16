@@ -6,20 +6,26 @@ import com.pbkour.mintrade.contracts.orders.Status;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private final OrdersRepository ordersRepository;
+    private final ApplicationEventPublisher publisher;
 
+    @Transactional
     public UUID createOrder(Order order) {
         OrderEntity entity = OrderEntity.builder()
             .accountId(order.getAccountId())
@@ -33,6 +39,8 @@ public class OrderService {
             .build();
 
         OrderEntity savedOrder = ordersRepository.save(entity);
+
+        publisher.publishEvent(new OrderSavedEvent(savedOrder));
 
         return savedOrder.getId();
     }
@@ -57,6 +65,9 @@ public class OrderService {
                 order.setUpdatedAt(Instant.now());
                 ordersRepository.save(order);
             });
+    }
+
+    public record OrderSavedEvent(OrderEntity order) {
     }
 
     @StandardException

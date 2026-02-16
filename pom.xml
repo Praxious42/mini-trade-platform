@@ -29,7 +29,7 @@
         <module>execution-service</module>
         <module>portfolio-service</module>
         <module>contracts</module>
-        <module>db-migrations</module>
+        <module>infra</module>
     </modules>
 
     <scm>
