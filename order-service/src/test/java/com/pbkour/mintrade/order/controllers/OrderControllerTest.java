@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class OrderControllerTest {
 
-    private final ObjectMapper mapper = ObjectMapperFactory.objectMapper();
+    private final ObjectMapper mapper = ObjectMapperFactory.create();
     private MockMvc mockMvc;
     @Mock
     private OrderService orderService;

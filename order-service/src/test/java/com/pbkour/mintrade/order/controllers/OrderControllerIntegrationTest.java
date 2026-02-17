@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 class OrderControllerIntegrationTest {
 
-    private final ObjectMapper mapper = ObjectMapperFactory.objectMapper();
+    private final ObjectMapper mapper = ObjectMapperFactory.create();
 
     @Autowired
     private WebApplicationContext wac;

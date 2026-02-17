@@ -19,7 +19,7 @@ public class ObjectMapperFactory {
 
     @Bean
     @Primary
-    public static ObjectMapper objectMapper() {
+    public ObjectMapper objectMapper() {
         return create();
     }
 }
