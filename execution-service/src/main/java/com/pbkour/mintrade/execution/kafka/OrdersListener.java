@@ -21,8 +21,7 @@ public class OrdersListener {
             OrdersCreated payload = objectMapper.readValue(message, OrdersCreated.class);
             log.info("[OrdersListener] received orders.created key={} orderId={} payload={}",
                 key, payload != null && payload.getOrder() != null ? payload.getOrder().getOrderId() : "<null>", payload);
-
-
+            // TODO: Implement order processing logic for orders.created events (e.g. validate, persist, or dispatch for execution)
         } catch (Exception e) {
             log.error("[OrdersListener] failed to process orders.created key={}", key, e);
             throw new RuntimeException(e);
