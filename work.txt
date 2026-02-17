@@ -1,27 +1,3 @@
-DAY 4 — Kafka local wiring in docker-compose
-Goal: Bring up Kafka + Postgres for local development.
-Checklist:
-- docker-compose with kafka (kraft or zookeeper), postgres-order, postgres-portfolio
-- Document env vars and ports in README
-Acceptance:
-- `docker compose up` starts dependencies cleanly
-
-
----
-
-DAY 4 — Order-service: publish orders.created to Kafka
-Goal: Emit event when order is accepted.
-Checklist:
-- Spring Kafka producer config (JSON)
-- Publish OrdersCreated event after DB save
-- Add message key = orderId
-Acceptance:
-- Manual test: creating order produces message on orders.created
-- Producer unit test or slice test verifies send called
-
-
----
-
 DAY 5 — Execution-service skeleton + Kafka consumer
 Goal: Consumer for orders.created.
 Checklist:
