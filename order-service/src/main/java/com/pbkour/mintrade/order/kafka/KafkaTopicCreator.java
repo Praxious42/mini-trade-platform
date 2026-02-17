@@ -27,7 +27,7 @@ public class KafkaTopicCreator implements ApplicationRunner {
     @Value("${kafka.topic.replication-factor:1}")
     private short replicationFactor;
 
-    @Value("${kafka.bootstrap-servers:${KAFKA_BOOTSTRAP_SERVERS:host.docker.internal:9092}}")
+    @Value("${spring.kafka.bootstrap-servers:${KAFKA_BOOTSTRAP_SERVERS:host.docker.internal:9092}}")
     private String bootstrapServers;
 
     @Override

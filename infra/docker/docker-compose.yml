@@ -21,6 +21,8 @@ services:
             - "9092:9092"
         volumes:
             - kafka-data:/var/lib/kafka/data
+        networks:
+            - mintrade-net
 
     mintrade-order:
         image: postgres:15
