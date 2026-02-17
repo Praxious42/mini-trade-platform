@@ -4,14 +4,18 @@ import com.pbkour.mintrade.contracts.db.OrderEntity;
 import com.pbkour.mintrade.contracts.orders.Side;
 import com.pbkour.mintrade.contracts.orders.Symbol;
 import com.pbkour.mintrade.contracts.orders.Type;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Order {
     private UUID orderId;
     private UUID accountId;

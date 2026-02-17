@@ -7,6 +7,7 @@ import org.apache.kafka.common.KafkaFuture;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 @Slf4j
+@ConditionalOnProperty(name = "kafka.topic.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class KafkaTopicCreator implements ApplicationRunner {
     @Value("${kafka.topic.names}")
