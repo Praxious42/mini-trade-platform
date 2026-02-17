@@ -1,0 +1,8 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS accounts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    equity NUMERIC(18,8) DEFAULT 0 NOT NULL CHECK (equity >= 0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+

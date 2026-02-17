@@ -1,0 +1,77 @@
+version: "3.8"
+
+services:
+    broker:
+        image: apache/kafka:latest
+        container_name: broker
+        environment:
+            KAFKA_NODE_ID: 1
+            KAFKA_PROCESS_ROLES: broker,controller
+            KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://host.docker.internal:9092
+            KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+            KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+            KAFKA_NUM_PARTITIONS: 3
+        ports:
+            - "9092:9092"
+        volumes:
+            - kafka-data:/var/lib/kafka/data
+        networks:
+            - mintrade-net
+
+    mintrade-order:
+        image: postgres:15
+        container_name: mintrade-order
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: mintrade-order
+        ports:
+            - "1234:5432"
+        volumes:
+            - order-data:/var/lib/postgresql/data
+            - ./order/initdb.d:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 10s
+        networks:
+            - mintrade-net
+
+    mintrade-portfolio:
+        image: postgres:15
+        container_name: mintrade-portfolio
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: mintrade-portfolio
+        ports:
+            - "1235:5432"
+        volumes:
+            - portfolio-data:/var/lib/postgresql/data
+            - ./portfolio/initdb.d:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 10s
+        networks:
+            - mintrade-net
+
+volumes:
+    kafka-data:
+    order-data:
+    portfolio-data:
+
+networks:
+    mintrade-net:
+        driver: bridge
+

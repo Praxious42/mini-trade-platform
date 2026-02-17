@@ -14,6 +14,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -33,6 +34,9 @@ class OrderServiceTest {
 
     @Mock
     private OrdersRepository ordersRepository;
+
+    @Mock
+    private ApplicationEventPublisher publisher;
 
     @InjectMocks
     private OrderService orderService;
@@ -75,7 +79,7 @@ class OrderServiceTest {
         UUID result = orderService.createOrder(sampleOrder);
 
         assertEquals(saved.getId(), result);
-        verify(ordersRepository, times(1)).save(entityCaptor.capture());
+        verify(ordersRepository).save(entityCaptor.capture());
         OrderEntity captured = entityCaptor.getValue();
         assertEquals(sampleOrder.getAccountId(), captured.getAccountId());
         assertEquals(sampleOrder.getSymbol(), captured.getSymbol());
@@ -83,6 +87,8 @@ class OrderServiceTest {
         assertEquals(sampleOrder.getType(), captured.getType());
         assertEquals(sampleOrder.getQuantity(), captured.getQuantity());
         assertEquals(sampleOrder.getLimitPrice(), captured.getLimitPrice());
+
+        verify(publisher).publishEvent(any(OrderService.OrderSavedEvent.class));
     }
 
     @Test

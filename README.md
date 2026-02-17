@@ -15,9 +15,11 @@ A small event-driven trading backend built with **Java 17** and **Spring Boot**,
 ## Services
 
 ### 1) order-service (REST API)
+
 **Base package:** `com.pbkour.mintrade.order`
 
 Responsibilities:
+
 - Accept/validate order requests via HTTP
 - Perform **pre-trade risk check** by calling portfolio-service over **gRPC**
 - Persist orders to PostgreSQL
@@ -25,60 +27,72 @@ Responsibilities:
 - Consume fill/reject events to update order state
 
 Main endpoints (suggested):
+
 - `POST /api/v1/orders` — create order (MARKET / LIMIT)
 - `POST /api/v1/orders/{id}/cancel` — cancel order
 - `GET /api/v1/orders/{id}` — get order
 - `GET /api/v1/orders?accountId=...` — list orders by account
 
 ### 2) execution-service (Kafka worker)
+
 **Base package:** `com.pbkour.mintrade.execution`
 
 Responsibilities:
+
 - Consume `orders.created` events
 - Simulate execution (fills/rejections)
 - Publish `orders.filled` / `orders.rejected`
 
 Notes:
+
 - Stateless by default
 - Designed to show consumer reliability: retries/backoff + idempotency keys
 
 ### 3) portfolio-service (gRPC + Kafka consumer)
+
 **Base package:** `com.pbkour.mintrade.portfolio`
 
 Responsibilities:
+
 - Own portfolio state (accounts, limits, positions)
 - Consume `orders.filled` and apply fills to positions transactionally
 - Expose **gRPC** API for risk checks used by order-service
 
 gRPC methods (suggested):
+
 - `CheckOrderRisk(accountId, symbol, side, qty, priceHint, orderType)` -> `allowed, reason, requiredMargin, availableMargin`
 - (Optional) `GetPortfolio(accountId)` for debugging/demo
 
 ## Messaging (Kafka)
 
 Topic naming (suggested):
+
 - `orders.created`
 - `orders.cancelled`
 - `orders.filled`
 - `orders.rejected`
 
 All events should include:
+
 - `eventId` (UUID) for idempotency
 - `occurredAt` timestamp
 - `orderId` and relevant payload
 
 Consumers should be idempotent (example approach):
+
 - store processed `eventId` in a `processed_events` table (portfolio-service)
 - enforce unique `fillId` / `eventId` on insert, ignore duplicates
 
 ## Persistence
 
 ### order-service schema (suggested)
+
 - `orders`: main order state (optimistic locking with `version`)
 - (optional) `fills`: store fill details
 - (optional) `outbox`: transactional outbox for publishing events safely
 
 ### portfolio-service schema (suggested)
+
 - `accounts`: equity / balance-like numbers for margin calculations
 - `account_limits`: max notional, max position per symbol, margin rates
 - `positions`: `(accountId, symbol)` -> `netQty, avgPrice`
@@ -87,11 +101,13 @@ Consumers should be idempotent (example approach):
 ## Local development
 
 ### Prerequisites
+
 - Java 17
 - Maven 3.9+
 - Docker + Docker Compose
 
 ### Run dependencies + services
+
 1. Start Kafka + Postgres (from repo root):
 
 ```powershell
@@ -111,7 +127,52 @@ mvn -pl portfolio spring-boot:run
 
 (Replace module names with your module artifactIds if they differ: `order`, `execution`, `portfolio`.)
 
+### Docker Compose — Environment & Ports
+
+The local Docker Compose file at `infra/docker/docker-compose.yml` defines the supporting infrastructure for local development. Below is a concise summary of each service's environment variables (names) and host:container port mappings taken from that file.
+
+- broker (Apache Kafka)
+    - Environment variables (names):
+        - KAFKA_NODE_ID
+        - KAFKA_PROCESS_ROLES
+        - KAFKA_LISTENERS
+        - KAFKA_ADVERTISED_LISTENERS
+        - KAFKA_CONTROLLER_LISTENER_NAMES
+        - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+        - KAFKA_CONTROLLER_QUORUM_VOTERS
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+        - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+        - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+        - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+        - KAFKA_NUM_PARTITIONS
+    - Ports:
+        - 9092:9092 (host:container) — Kafka plaintext listener exposed on the host (advertised listener uses `host.docker.internal` in the compose file)
+
+- mintrade-order (Postgres)
+    - Environment variables:
+        - POSTGRES_USER (default in compose: `postgres`)
+        - POSTGRES_PASSWORD (default in compose: `password`)
+        - POSTGRES_DB (default in compose: `mintrade-order`)
+    - Ports:
+        - 1234:5432 (host:container)
+
+- mintrade-portfolio (Postgres)
+    - Environment variables:
+        - POSTGRES_USER (default in compose: `postgres`)
+        - POSTGRES_PASSWORD (default in compose: `password`)
+        - POSTGRES_DB (default in compose: `mintrade-portfolio`)
+    - Ports:
+        - 1235:5432 (host:container)
+
+Notes:
+
+- The compose file (`infra/docker/docker-compose.yml`) is the authoritative source for these values; change them there or use a `.env` file if you want to override variable substitutions.
+- The Postgres services mount initialization scripts from `infra/docker/order/initdb.d` and `infra/docker/portfolio/initdb.d` respectively.
+- All services are connected to the `mintrade-net` Docker network declared in the compose file.
+- If you start the infra from the repo root (as shown above), the mapped host ports are: Kafka 9092, Postgres for order-service 1234, Postgres for portfolio-service 1235.
+
 ### Quick demo (example curl)
+
 Create a market order:
 
 ```bash
@@ -127,6 +188,7 @@ curl http://localhost:8080/api/v1/orders/<orderId>
 ```
 
 Expected flow:
+
 1. Order accepted (after gRPC risk check)
 2. `orders.created` published to Kafka
 3. execution-service produces `orders.filled`
@@ -154,14 +216,15 @@ mvn verify
 ## Observability
 
 - Spring Boot Actuator enabled on all services:
-  - `/actuator/health`
-  - `/actuator/info`
-  - (optional) `/actuator/prometheus`
+    - `/actuator/health`
+    - `/actuator/info`
+    - (optional) `/actuator/prometheus`
 - Structured JSON logs + correlation IDs propagated via HTTP headers and Kafka message headers.
 
 ## CI/CD
 
 GitHub Actions workflow (suggested):
+
 - build + unit tests
 - integration tests (Testcontainers)
 - jacoco coverage
@@ -170,6 +233,7 @@ GitHub Actions workflow (suggested):
 ## Kubernetes
 
 A minimal `k8s/` directory provides manifests for:
+
 - Deployments + Services for each microservice
 - ConfigMaps for configuration
 - Notes in this README for running on kind/minikube
@@ -177,6 +241,7 @@ A minimal `k8s/` directory provides manifests for:
 (For local dev, Kafka/Postgres remain via Docker Compose unless you add Helm charts.)
 
 ## Project structure (suggested)
+
 - `contracts/` — shared event DTOs and (optional) protobuf definitions
 - `order-service/`
 - `execution-service/`
@@ -185,11 +250,13 @@ A minimal `k8s/` directory provides manifests for:
 - `k8s/`
 
 ## Tradeoffs & design notes
+
 - Events are JSON for simplicity; Avro/Schema Registry would be a natural extension.
 - Exactly-once delivery is not assumed; consumers are idempotent instead.
 - (Optional) transactional outbox in order-service to avoid dual-write issues.
 - Execution is simulated; in a real system this would connect to market/exchange gateways.
 
 ## License
+
 MIT
 
