@@ -24,7 +24,6 @@ public class OrdersListener {
             // TODO: Implement order processing logic for orders.created events (e.g. validate, persist, or dispatch for execution)
         } catch (Exception e) {
             log.error("[OrdersListener] failed to process orders.created key={}", key, e);
-            throw new RuntimeException(e);
         }
     }
 
