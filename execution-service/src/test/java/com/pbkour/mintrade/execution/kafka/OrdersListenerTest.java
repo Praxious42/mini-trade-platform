@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.contracts.json.ObjectMapperFactory;
 import com.pbkour.mintrade.contracts.kafka.Order;
 import com.pbkour.mintrade.contracts.kafka.OrdersCreated;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -42,5 +43,13 @@ class OrdersListenerTest {
 
         assertDoesNotThrow(() -> listener.onOrdersCreated("not-a-json", "k"));
     }
-}
 
+    @Test
+    void onDlq_handlesConsumerRecordWithoutThrowing() {
+        OrdersListener listener = new OrdersListener(mapper);
+
+        ConsumerRecord<String, String> record = new ConsumerRecord<>("orders.created.dlq", 0, 0L, "key-1", "{\"some\":\"payload\"}");
+
+        assertDoesNotThrow(() -> listener.onDlq(record));
+    }
+}

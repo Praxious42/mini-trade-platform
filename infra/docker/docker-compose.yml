@@ -24,6 +24,18 @@ services:
         networks:
             - mintrade-net
 
+    kafka-init:
+        image: apache/kafka:latest
+        container_name: kafka-init
+        networks:
+            - mintrade-net
+        depends_on:
+            - broker
+        volumes:
+            - ./kafka/create-topics.sh:/create-topics.sh:ro
+            - ./kafka/topics.txt:/topics.txt:ro
+        entrypoint: [ "/bin/sh","-c","/create-topics.sh" ]
+
     mintrade-order:
         image: postgres:15
         container_name: mintrade-order

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.contracts.kafka.OrdersCreated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
@@ -27,4 +28,8 @@ public class OrdersListener {
         }
     }
 
+    @KafkaListener(topics = "orders.created.dlq")
+    public void onDlq(ConsumerRecord<String, String> consumerRecord) {
+        log.info("[OrdersListenerDLQ] received orders.created consumerRecord={}", consumerRecord);
+    }
 }

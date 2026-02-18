@@ -1,0 +1,8 @@
+orders.created
+orders.created.dlq
+orders.cancelled
+orders.cancelled.dlq
+orders.filled
+orders.filled.dlq
+orders.rejected
+orders.rejected.dlq
