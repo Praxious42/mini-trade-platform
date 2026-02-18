@@ -1,15 +1,3 @@
-DAY 5 — Execution-service skeleton + Kafka consumer
-Goal: Consumer for orders.created.
-Checklist:
-- Spring Boot worker app + Kafka consumer config
-- Consume OrdersCreated and log/validate payload
-- Add basic retry/backoff and DLQ topic config (names only is OK)
-Acceptance:
-- When orders.created arrives, consumer processes it (log shows)
-
-
----
-
 DAY 5 — Execution simulator: price generation + fill decisions
 Goal: Turn created orders into filled/rejected.
 Checklist:
