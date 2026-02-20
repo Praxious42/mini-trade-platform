@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.order.controllers;
 
-import com.pbkour.mintrade.contracts.db.OrderEntity.OrderEntityValidationException;
+import com.pbkour.mintrade.commons.db.OrderEntity.OrderEntityValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,9 +1,10 @@
 package com.pbkour.mintrade.order.services;
 
-import com.pbkour.mintrade.contracts.db.OrderEntity;
-import com.pbkour.mintrade.contracts.dto.Order;
-import com.pbkour.mintrade.contracts.orders.Status;
-import com.pbkour.mintrade.order.repositories.OrdersRepository;
+import com.pbkour.mintrade.commons.db.OrderEntity;
+import com.pbkour.mintrade.commons.db.OrdersRepository;
+import com.pbkour.mintrade.commons.dto.Order;
+import com.pbkour.mintrade.commons.kafka.OrdersFilled;
+import com.pbkour.mintrade.commons.orders.Status;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,19 @@ public class OrderService {
                 order.setUpdatedAt(Instant.now());
                 ordersRepository.save(order);
             });
+    }
+
+    public void updateFilledOrder(OrdersFilled ordersFilled) {
+        UUID orderId = ordersFilled.getOrderId();
+        ordersRepository.findById(orderId).ifPresentOrElse(
+            order -> {
+                order.setStatus(Status.FILLED);
+                ordersRepository.save(order);
+            },
+            () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)
+        );
+
+        log.info("Order updated event for orderId={}", orderId);
     }
 
     public record OrderSavedEvent(OrderEntity order) {

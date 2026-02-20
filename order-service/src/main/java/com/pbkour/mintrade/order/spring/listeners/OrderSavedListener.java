@@ -1,8 +1,8 @@
 package com.pbkour.mintrade.order.spring.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.contracts.kafka.Order;
-import com.pbkour.mintrade.contracts.kafka.OrdersCreated;
+import com.pbkour.mintrade.commons.kafka.Order;
+import com.pbkour.mintrade.commons.kafka.OrdersCreated;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.order.controllers;
 
-import com.pbkour.mintrade.contracts.dto.Order;
+import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;

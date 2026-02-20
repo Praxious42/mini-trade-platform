@@ -1,11 +1,15 @@
 package com.pbkour.mintrade.execution.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.contracts.json.ObjectMapperFactory;
-import com.pbkour.mintrade.contracts.kafka.Order;
-import com.pbkour.mintrade.contracts.kafka.OrdersCreated;
+import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
+import com.pbkour.mintrade.commons.kafka.Order;
+import com.pbkour.mintrade.commons.kafka.OrdersCreated;
+import com.pbkour.mintrade.execution.services.OrderFillService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,9 +17,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+@ExtendWith(MockitoExtension.class)
 class OrdersListenerTest {
-
     private final ObjectMapper mapper = ObjectMapperFactory.create();
+    @Mock
+    private OrderFillService orderFillService;
 
     @Test
     void onOrdersCreated_parsesValidPayloadWithoutThrowing() throws Exception {
@@ -32,21 +38,21 @@ class OrdersListenerTest {
 
         String json = mapper.writeValueAsString(payload);
 
-        OrdersListener listener = new OrdersListener(mapper);
+        OrdersListener listener = new OrdersListener(mapper, orderFillService);
 
         assertDoesNotThrow(() -> listener.onOrdersCreated(json, "key-1"));
     }
 
     @Test
     void onOrdersCreated_handlesMalformedJsonWithoutThrowing() {
-        OrdersListener listener = new OrdersListener(mapper);
+        OrdersListener listener = new OrdersListener(mapper, orderFillService);
 
         assertDoesNotThrow(() -> listener.onOrdersCreated("not-a-json", "k"));
     }
 
     @Test
     void onDlq_handlesConsumerRecordWithoutThrowing() {
-        OrdersListener listener = new OrdersListener(mapper);
+        OrdersListener listener = new OrdersListener(mapper, orderFillService);
 
         ConsumerRecord<String, String> record = new ConsumerRecord<>("orders.created.dlq", 0, 0L, "key-1", "{\"some\":\"payload\"}");
 

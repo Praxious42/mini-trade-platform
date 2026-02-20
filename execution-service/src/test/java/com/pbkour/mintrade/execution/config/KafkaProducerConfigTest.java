@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringJUnitConfig(classes = KafkaProducerConfig.class)
+@SpringJUnitConfig(classes = com.pbkour.mintrade.commons.kafka.config.KafkaProducerConfig.class)
 @TestPropertySource(properties = "spring.kafka.bootstrap-servers=host.test:1234")
 class KafkaProducerConfigTest {
 
