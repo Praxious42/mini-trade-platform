@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -24,6 +25,7 @@ public class OrderFillService {
     private final FillsRepository fillsRepository;
     private final ApplicationEventPublisher publisher;
 
+    @Transactional
     public void fillOrder(OrdersCreated payload) {
         Order order = payload.getOrder();
         BigDecimal price = priceGenerator.generatePrice(order.getSymbol());

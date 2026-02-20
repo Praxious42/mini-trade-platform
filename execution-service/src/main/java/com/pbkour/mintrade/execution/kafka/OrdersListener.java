@@ -32,7 +32,7 @@ public class OrdersListener {
                 key, payload != null && payload.getOrder() != null ? payload.getOrder().getOrderId() : "<null>", payload);
 
             ofNullable(payload).ifPresentOrElse(
-                p -> orderFillService.fillOrder(payload),
+                orderFillService::fillOrder,
                 () -> log.warn("[OrdersListener] received null payload for orders.created key={}", key)
             );
 

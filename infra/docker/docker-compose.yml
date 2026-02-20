@@ -61,7 +61,8 @@ services:
         image: postgres:15
         container_name: order-init-runner
         depends_on:
-            - mintrade-order
+            mintrade-order:
+                condition: service_healthy
         environment:
             PGUSER: postgres
             PGPASSWORD: password
