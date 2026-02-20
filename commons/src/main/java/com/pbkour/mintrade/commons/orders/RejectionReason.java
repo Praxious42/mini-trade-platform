@@ -1,5 +1,6 @@
 package com.pbkour.mintrade.commons.orders;
 
 public enum RejectionReason {
-    RISK_LIMIT
+    RISK_LIMIT,
+    RANDOM_FAILURE
 }

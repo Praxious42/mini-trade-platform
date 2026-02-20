@@ -3,9 +3,8 @@ package com.pbkour.mintrade.order.services;
 import com.pbkour.mintrade.commons.db.OrderEntity;
 import com.pbkour.mintrade.commons.db.OrdersRepository;
 import com.pbkour.mintrade.commons.dto.Order;
-import com.pbkour.mintrade.commons.orders.Side;
-import com.pbkour.mintrade.commons.orders.Symbol;
-import com.pbkour.mintrade.commons.orders.Type;
+import com.pbkour.mintrade.commons.kafka.OrdersRejected;
+import com.pbkour.mintrade.commons.orders.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -110,7 +109,7 @@ class OrderServiceTest {
 
         when(ordersRepository.findById(id)).thenReturn(Optional.of(entity));
 
-        Order returned = orderService.getOrder(id);
+        com.pbkour.mintrade.commons.dto.Order returned = orderService.getOrder(id);
 
         assertNotNull(returned);
         assertEquals(sampleOrder.getAccountId(), returned.getAccountId());
@@ -135,7 +134,7 @@ class OrderServiceTest {
 
         when(ordersRepository.findByAccountId(eq(accountId), any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(entity)));
 
-        List<Order> orders = orderService.getAccountOrders(accountId, 0, 1);
+        List<com.pbkour.mintrade.commons.dto.Order> orders = orderService.getAccountOrders(accountId, 0, 1);
 
         assertEquals(1, orders.size());
         assertEquals(accountId, orders.get(0).getAccountId());
@@ -168,5 +167,59 @@ class OrderServiceTest {
         OrderEntity saved = entityCaptor.getValue();
         assertEquals(id, saved.getId());
     }
-}
 
+    @Test
+    void rejectOrder_setsStatusToRejected_andSaves_whenOrderExists() {
+        UUID id = UUID.fromString("77777777-7777-7777-7777-777777777777");
+        OrderEntity entity = OrderEntity.builder()
+            .id(id)
+            .accountId(sampleOrder.getAccountId())
+            .symbol(sampleOrder.getSymbol())
+            .side(sampleOrder.getSide())
+            .type(sampleOrder.getType())
+            .quantity(sampleOrder.getQuantity())
+            .limitPrice(sampleOrder.getLimitPrice())
+            .status(null)
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .version(0)
+            .build();
+
+        OrdersRejected rejected = OrdersRejected.builder()
+            .eventId(UUID.randomUUID())
+            .occurredAt(Instant.now())
+            .orderId(id)
+            .reason(RejectionReason.RISK_LIMIT)
+            .build();
+
+        when(ordersRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(ordersRepository.save(any(OrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+
+        orderService.rejectOrder(rejected);
+
+        verify(ordersRepository, times(1)).findById(id);
+        verify(ordersRepository, times(1)).save(entityCaptor.capture());
+        OrderEntity saved = entityCaptor.getValue();
+        assertEquals(Status.REJECTED, saved.getStatus());
+        assertEquals(id, saved.getId());
+    }
+
+    @Test
+    void rejectOrder_doesNothing_whenOrderDoesNotExist() {
+        UUID id = UUID.fromString("88888888-8888-8888-8888-888888888888");
+
+        OrdersRejected rejected = OrdersRejected.builder()
+            .eventId(UUID.randomUUID())
+            .occurredAt(Instant.now())
+            .orderId(id)
+            .reason(RejectionReason.RISK_LIMIT)
+            .build();
+
+        when(ordersRepository.findById(id)).thenReturn(Optional.empty());
+
+        orderService.rejectOrder(rejected);
+
+        verify(ordersRepository, times(1)).findById(id);
+        verify(ordersRepository, never()).save(any(OrderEntity.class));
+    }
+}
