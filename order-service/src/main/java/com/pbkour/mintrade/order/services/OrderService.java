@@ -4,6 +4,7 @@ import com.pbkour.mintrade.commons.db.OrderEntity;
 import com.pbkour.mintrade.commons.db.OrdersRepository;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
+import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
@@ -75,6 +76,18 @@ public class OrderService {
                 ordersRepository.save(order);
             },
             () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)
+        );
+    }
+
+    @Transactional
+    public void rejectOrder(OrdersRejected ordersRejected) {
+        UUID orderId = ordersRejected.getOrderId();
+        ordersRepository.findById(orderId).ifPresentOrElse(
+            order -> {
+                order.setStatus(Status.REJECTED);
+                ordersRepository.save(order);
+            },
+            () -> log.warn("Received OrdersRejected event for non-existent orderId={}", orderId)
         );
     }
 

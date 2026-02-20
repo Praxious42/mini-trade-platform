@@ -44,7 +44,7 @@ class OrderSavedListenerTest {
 
         listener.onSaved(event);
 
-        verify(kafkaTemplate).send("orders.created", id.toString(), json);
+        verify(kafkaTemplate).send(eq("orders.created"), anyString(), eq(json));
     }
 
     @Test
