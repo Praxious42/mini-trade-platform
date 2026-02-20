@@ -1,15 +1,3 @@
-DAY 5 — Execution simulator: price generation + fill decisions
-Goal: Turn created orders into filled/rejected.
-Checklist:
-- Deterministic price generator per symbol (seeded RNG)
-- MARKET fills immediately; LIMIT fills if price crosses
-- Optionally split into 2 partial fills
-Acceptance:
-- Unit tests for MARKET and LIMIT behavior
-
-
----
-
 DAY 6 — Execution-service: publish orders.filled / orders.rejected
 Goal: Emit result events.
 Checklist:
