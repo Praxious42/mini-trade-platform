@@ -1,15 +1,3 @@
-DAY 6 — Execution-service: publish orders.filled / orders.rejected
-Goal: Emit result events.
-Checklist:
-- Publish OrdersFilled with fillId(s), qty, price, timestamps
-- Publish OrdersRejected for simulated failures
-- Ensure idempotency strategy defined (eventId/fillId uniqueness)
-Acceptance:
-- Creating an order leads to a filled event visible on Kafka
-
-
----
-
 DAY 6 — Order-service: consume fill/reject events and update status
 Goal: Keep order status in sync.
 Checklist:
