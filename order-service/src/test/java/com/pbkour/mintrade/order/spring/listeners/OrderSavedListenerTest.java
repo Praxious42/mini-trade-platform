@@ -1,7 +1,7 @@
 package com.pbkour.mintrade.order.spring.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.contracts.db.OrderEntity;
+import com.pbkour.mintrade.commons.db.OrderEntity;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -2,9 +2,9 @@ package com.pbkour.mintrade.order.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.contracts.db.OrderEntity;
-import com.pbkour.mintrade.contracts.json.ObjectMapperFactory;
-import com.pbkour.mintrade.order.repositories.OrdersRepository;
+import com.pbkour.mintrade.commons.db.OrderEntity;
+import com.pbkour.mintrade.commons.db.OrdersRepository;
+import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

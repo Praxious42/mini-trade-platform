@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.execution.kafka;
 
-import com.pbkour.mintrade.execution.config.KafkaConsumerConfig;
+import com.pbkour.mintrade.commons.kafka.config.KafkaConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;

@@ -49,11 +49,31 @@ services:
             - order-data:/var/lib/postgresql/data
             - ./order/initdb.d:/docker-entrypoint-initdb.d:ro
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1" ]
+            test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
             interval: 10s
             timeout: 5s
             retries: 10
             start_period: 10s
+        networks:
+            - mintrade-net
+
+    order-init-runner:
+        image: postgres:15
+        container_name: order-init-runner
+        depends_on:
+            mintrade-order:
+                condition: service_healthy
+        environment:
+            PGUSER: postgres
+            PGPASSWORD: password
+            PGDATABASE: mintrade-order
+            PGHOST: mintrade-order
+            SCRIPTS_DIR: /scripts
+        volumes:
+            - ./order/initdb.d:/scripts:ro
+            - ./order/run-init.sh:/usr/local/bin/run-init.sh:ro
+        entrypoint: [ "/bin/sh","-c","/usr/local/bin/run-init.sh" ]
+        restart: "no"
         networks:
             - mintrade-net
 
@@ -70,7 +90,7 @@ services:
             - portfolio-data:/var/lib/postgresql/data
             - ./portfolio/initdb.d:/docker-entrypoint-initdb.d:ro
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1" ]
+            test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
             interval: 10s
             timeout: 5s
             retries: 10

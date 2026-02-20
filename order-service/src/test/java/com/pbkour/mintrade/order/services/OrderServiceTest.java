@@ -1,11 +1,11 @@
 package com.pbkour.mintrade.order.services;
 
-import com.pbkour.mintrade.contracts.db.OrderEntity;
-import com.pbkour.mintrade.contracts.dto.Order;
-import com.pbkour.mintrade.contracts.orders.Side;
-import com.pbkour.mintrade.contracts.orders.Symbol;
-import com.pbkour.mintrade.contracts.orders.Type;
-import com.pbkour.mintrade.order.repositories.OrdersRepository;
+import com.pbkour.mintrade.commons.db.OrderEntity;
+import com.pbkour.mintrade.commons.db.OrdersRepository;
+import com.pbkour.mintrade.commons.dto.Order;
+import com.pbkour.mintrade.commons.orders.Side;
+import com.pbkour.mintrade.commons.orders.Symbol;
+import com.pbkour.mintrade.commons.orders.Type;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

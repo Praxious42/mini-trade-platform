@@ -28,7 +28,7 @@
         <module>order-service</module>
         <module>execution-service</module>
         <module>portfolio-service</module>
-        <module>contracts</module>
+        <module>commons</module>
         <module>infra</module>
     </modules>
 

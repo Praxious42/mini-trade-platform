@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>com.pbkour.mintrade</groupId>
-            <artifactId>contracts</artifactId>
+            <artifactId>commons</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

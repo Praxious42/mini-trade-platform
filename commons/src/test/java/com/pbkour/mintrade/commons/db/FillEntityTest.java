@@ -1,0 +1,92 @@
+package com.pbkour.mintrade.commons.db;
+
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class FillEntityTest {
+
+    @Test
+    void prePersist_setsTimestampAndPassesValidation_whenFieldsValid() {
+        UUID orderId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        FillEntity fill = FillEntity.builder()
+            .orderId(orderId)
+            .quantity(5L)
+            .price(new BigDecimal("12.34"))
+            .build();
+
+        assertNull(fill.getTimestamp(), "timestamp should start null before persist");
+
+        Instant before = Instant.now();
+        fill.prePersistUpdate();
+        Instant after = Instant.now();
+
+        assertNotNull(fill.getTimestamp(), "timestamp must be set by prePersistUpdate");
+        assertFalse(fill.getTimestamp().isBefore(before), "timestamp should be >= before time");
+        assertFalse(fill.getTimestamp().isAfter(after.plusSeconds(1)), "timestamp should not be in the future");
+    }
+
+    @Test
+    void prePersist_throws_whenOrderIdIsNull() {
+        FillEntity fill = FillEntity.builder()
+            .quantity(1L)
+            .price(new BigDecimal("1.00"))
+            .build();
+
+        assertThrows(FillEntity.FillEntityValidationException.class, fill::prePersistUpdate);
+    }
+
+    @Test
+    void prePersist_throws_whenPriceIsNull() {
+        FillEntity fill = FillEntity.builder()
+            .orderId(UUID.randomUUID())
+            .quantity(1L)
+            .price(null)
+            .build();
+
+        assertThrows(FillEntity.FillEntityValidationException.class, fill::prePersistUpdate);
+    }
+
+    @Test
+    void prePersist_throws_whenPriceIsNegative() {
+        FillEntity fill = FillEntity.builder()
+            .orderId(UUID.randomUUID())
+            .quantity(1L)
+            .price(new BigDecimal("-0.01"))
+            .build();
+
+        assertThrows(FillEntity.FillEntityValidationException.class, fill::prePersistUpdate);
+    }
+
+    @Test
+    void prePersist_throws_whenQuantityIsNull_orNonPositive() {
+        FillEntity nullQty = FillEntity.builder()
+            .orderId(UUID.randomUUID())
+            .quantity(null)
+            .price(new BigDecimal("1.00"))
+            .build();
+
+        assertThrows(FillEntity.FillEntityValidationException.class, nullQty::prePersistUpdate);
+
+        FillEntity zeroQty = FillEntity.builder()
+            .orderId(UUID.randomUUID())
+            .quantity(0L)
+            .price(new BigDecimal("1.00"))
+            .build();
+
+        assertThrows(FillEntity.FillEntityValidationException.class, zeroQty::prePersistUpdate);
+
+        FillEntity negQty = FillEntity.builder()
+            .orderId(UUID.randomUUID())
+            .quantity(-5L)
+            .price(new BigDecimal("1.00"))
+            .build();
+
+        assertThrows(FillEntity.FillEntityValidationException.class, negQty::prePersistUpdate);
+    }
+}
+
