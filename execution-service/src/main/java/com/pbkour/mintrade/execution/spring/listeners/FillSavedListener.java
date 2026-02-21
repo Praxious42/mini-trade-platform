@@ -40,11 +40,9 @@ public class FillSavedListener {
             .orderId(e.orderId())
             .fills(fills)
             .build();
-
-
+        
         try {
             kafkaTemplate.send("orders.filled", payload.getEventId().toString(), mapper.writeValueAsString(payload));
-            log.info(payload.toString());
             log.info("Order filled event sent to topic orders.filled for orderId={}", e.orderId());
         } catch (Exception ex) {
             log.error("Failed to serialize or send OrdersFilled for orderId={}", e.orderId(), ex);

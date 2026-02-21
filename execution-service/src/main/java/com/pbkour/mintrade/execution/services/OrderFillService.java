@@ -31,7 +31,7 @@ public class OrderFillService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper mapper;
 
-    private static boolean isAcceptableLimit(Order order, BigDecimal price) {
+    private static boolean isUnfavorableLimit(Order order, BigDecimal price) {
         return order.getType() == Type.LIMIT && ((order.getSide().equals(Side.BUY) && price.compareTo(order.getLimitPrice()) > 0)
             || (order.getSide().equals(Side.SELL) && price.compareTo(order.getLimitPrice()) < 0));
     }
@@ -47,14 +47,14 @@ public class OrderFillService {
         Order order = payload.getOrder();
         BigDecimal price = priceGenerator.generatePrice(order.getSymbol());
 
-        if (isAcceptableLimit(order, price)) {
+        if (isUnfavorableLimit(order, price)) {
             log.info("NOT filling order {} with price {}", order.getSymbol(), price);
             return;
         }
 
         log.info("Filling order {} with price {}", order.getSymbol(), price);
         List<Long> partialFills = ExecutionDecider.getPartialFills(order.getQuantity());
-        log.info("Partial fills: {}", partialFills);
+        log.info("Fill quantities: {}", partialFills);
         List<FillEntity> fillEntities = partialFills.stream().map(qty -> FillEntity.builder()
             .orderId(order.getOrderId())
             .quantity(qty)

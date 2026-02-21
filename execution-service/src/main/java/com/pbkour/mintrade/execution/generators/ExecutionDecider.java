@@ -19,11 +19,11 @@ public class ExecutionDecider {
 
     protected static List<Long> getPartialFills(long quantity, double partialFillRate) {
         double randomValue = Math.random();
-        log.info("This is a partial fill");
         if (randomValue < partialFillRate) {
+            log.info("This is a partial fill");
             return List.of(quantity / 2, quantity - quantity / 2);
         }
-        
+
         return List.of(quantity);
     }
 
