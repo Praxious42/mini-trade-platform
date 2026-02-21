@@ -18,6 +18,14 @@ class ExecutionDeciderTest {
     }
 
     @Test
+    void getPartialFills_withPartialFillRateOne_oddQuantity_returnsTwoPartsWithRemainder() {
+        List<Long> parts = ExecutionDecider.getPartialFills(5L, 1.0);
+        assertEquals(2, parts.size());
+        assertEquals(2L, parts.get(0));
+        assertEquals(3L, parts.get(1));
+    }
+
+    @Test
     void getPartialFills_withPartialFillRateZero_returnsWhole() {
         List<Long> parts = ExecutionDecider.getPartialFills(5L, 0.0);
         assertEquals(1, parts.size());
