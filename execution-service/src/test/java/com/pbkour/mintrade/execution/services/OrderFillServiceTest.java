@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -69,17 +68,22 @@ class OrderFillServiceTest {
 
         when(priceGenerator.generatePrice(Symbol.AAPL)).thenReturn(new BigDecimal("180.00"));
 
+        List<Long> knownFills = List.of(6L, 4L);
         try (MockedStatic<ExecutionDecider> mock = Mockito.mockStatic(ExecutionDecider.class)) {
             mock.when(ExecutionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.ACCEPTED);
+            mock.when(() -> ExecutionDecider.getPartialFills(order.getQuantity())).thenReturn(knownFills);
 
             orderFillService.fillOrder(payload);
         }
 
         verify(fillsRepository).saveAll(fillCaptor.capture());
         List<FillEntity> capturedFills = fillCaptor.getValue();
-        capturedFills.forEach(fillEntity -> assertEquals(order.getOrderId(), fillEntity.getOrderId()));
-        capturedFills.forEach(fillEntity -> assertNotNull(fillEntity.getQuantity()));
-        capturedFills.forEach(fillEntity -> assertEquals(0, fillEntity.getPrice().compareTo(new BigDecimal("180.00"))));
+        assertEquals(knownFills.size(), capturedFills.size());
+        for (int i = 0; i < capturedFills.size(); i++) {
+            assertEquals(order.getOrderId(), capturedFills.get(i).getOrderId());
+            assertEquals(knownFills.get(i), capturedFills.get(i).getQuantity());
+            assertEquals(0, capturedFills.get(i).getPrice().compareTo(new BigDecimal("180.00")));
+        }
 
         verify(publisher, times(1)).publishEvent(any(OrderFillService.FillsSavedEvent.class));
         verify(kafkaTemplate, never()).send(anyString(), anyString(), anyString());
