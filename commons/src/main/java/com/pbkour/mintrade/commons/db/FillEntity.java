@@ -28,7 +28,7 @@ public class FillEntity {
     private UUID orderId;
     @Column(name = "qty", nullable = false)
     private Long quantity;
-    @Column(name = "price", precision = 18, scale = 8)
+    @Column(name = "price", precision = 18, scale = 8, nullable = false)
     private BigDecimal price;
     @Column(name = "ts", nullable = false)
     private Instant timestamp;

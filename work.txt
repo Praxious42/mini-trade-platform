@@ -1,15 +1,3 @@
-DAY 6 — Order-service: consume fill/reject events and update status
-Goal: Keep order status in sync.
-Checklist:
-- Kafka consumer for orders.filled and orders.rejected
-- Update order status: PARTIALLY_FILLED/FILLED/REJECTED
-- Store fill records (optional) in fills table + Flyway migration V2
-Acceptance:
-- Integration test with embedded Kafka: create order -> status becomes FILLED
-
-
----
-
 DAY 7 — Portfolio-service: DB schema + entities
 Goal: Own portfolio state.
 Checklist:

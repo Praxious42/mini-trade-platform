@@ -72,7 +72,7 @@ public class OrderService {
         UUID orderId = ordersFilled.getOrderId();
         ordersRepository.findById(orderId).ifPresentOrElse(
             order -> {
-                order.setStatus(Status.FILLED);
+                order.setStatus(ordersFilled.getFills().size() > 1 ? Status.PARTIALLY_FILLED : Status.FILLED);
                 ordersRepository.save(order);
             },
             () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)

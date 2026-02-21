@@ -7,7 +7,7 @@ import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersCreated;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.*;
-import com.pbkour.mintrade.execution.generators.ExecutionDecisionDecider;
+import com.pbkour.mintrade.execution.generators.ExecutionDecider;
 import com.pbkour.mintrade.execution.generators.PriceGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -30,9 +31,14 @@ public class OrderFillService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper mapper;
 
+    private static boolean isAcceptableLimit(Order order, BigDecimal price) {
+        return order.getType() == Type.LIMIT && ((order.getSide().equals(Side.BUY) && price.compareTo(order.getLimitPrice()) > 0)
+            || (order.getSide().equals(Side.SELL) && price.compareTo(order.getLimitPrice()) < 0));
+    }
+
     @Transactional
     public void fillOrder(OrdersCreated payload) {
-        boolean accepted = ExecutionDecisionDecider.generateExecutionDecision().equals(ExecutionDecision.ACCEPTED);
+        boolean accepted = ExecutionDecider.generateExecutionDecision().equals(ExecutionDecision.ACCEPTED);
         if (!accepted) {
             log.info("Rejecting order {} for symbol {}", payload.getOrder().getOrderId(), payload.getOrder().getSymbol());
             rejectOrder(payload);
@@ -41,20 +47,23 @@ public class OrderFillService {
         Order order = payload.getOrder();
         BigDecimal price = priceGenerator.generatePrice(order.getSymbol());
 
-        if (order.getType() == Type.LIMIT && ((order.getSide().equals(Side.BUY) && price.compareTo(order.getLimitPrice()) > 0)
-            || (order.getSide().equals(Side.SELL) && price.compareTo(order.getLimitPrice()) < 0))) {
+        if (isAcceptableLimit(order, price)) {
             log.info("NOT filling order {} with price {}", order.getSymbol(), price);
             return;
         }
 
         log.info("Filling order {} with price {}", order.getSymbol(), price);
-        FillEntity saved = fillsRepository.save(FillEntity.builder()
+        List<Long> partialFills = ExecutionDecider.getPartialFills(order.getQuantity());
+        log.info("Partial fills: {}", partialFills);
+        List<FillEntity> fillEntities = partialFills.stream().map(qty -> FillEntity.builder()
             .orderId(order.getOrderId())
-            .quantity(order.getQuantity())
+            .quantity(qty)
             .price(price)
-            .build());
+            .build()).toList();
 
-        publisher.publishEvent(new FillSavedEvent(saved, order.getAccountId(), order.getSymbol()));
+        List<FillEntity> savedFillEntities = fillsRepository.saveAll(fillEntities);
+
+        publisher.publishEvent(new FillsSavedEvent(savedFillEntities, order.getAccountId(), order.getSymbol(), order.getOrderId()));
     }
 
     private void rejectOrder(OrdersCreated payload) {
@@ -73,6 +82,6 @@ public class OrderFillService {
         }
     }
 
-    public record FillSavedEvent(FillEntity fill, UUID accountId, Symbol symbol) {
+    public record FillsSavedEvent(List<FillEntity> fills, UUID accountId, Symbol symbol, UUID orderId) {
     }
 }

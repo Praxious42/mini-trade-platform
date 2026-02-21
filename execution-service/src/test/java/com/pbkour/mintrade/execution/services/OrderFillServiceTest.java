@@ -10,7 +10,7 @@ import com.pbkour.mintrade.commons.orders.ExecutionDecision;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
-import com.pbkour.mintrade.execution.generators.ExecutionDecisionDecider;
+import com.pbkour.mintrade.execution.generators.ExecutionDecider;
 import com.pbkour.mintrade.execution.generators.PriceGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,9 +20,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +50,7 @@ class OrderFillServiceTest {
     private OrderFillService orderFillService;
 
     @Captor
-    private ArgumentCaptor<FillEntity> fillCaptor;
+    private ArgumentCaptor<List<FillEntity>> fillCaptor;
 
     @Test
     void fillOrder_whenAccepted_savesFill_andPublishesEvent() {
@@ -67,27 +69,19 @@ class OrderFillServiceTest {
 
         when(priceGenerator.generatePrice(Symbol.AAPL)).thenReturn(new BigDecimal("180.00"));
 
-        FillEntity saved = FillEntity.builder()
-            .orderId(order.getOrderId())
-            .quantity(order.getQuantity())
-            .price(new BigDecimal("180.00"))
-            .build();
-
-        when(fillsRepository.save(any(FillEntity.class))).thenReturn(saved);
-
-        try (MockedStatic<ExecutionDecisionDecider> mock = Mockito.mockStatic(ExecutionDecisionDecider.class)) {
-            mock.when(ExecutionDecisionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.ACCEPTED);
+        try (MockedStatic<ExecutionDecider> mock = Mockito.mockStatic(ExecutionDecider.class)) {
+            mock.when(ExecutionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.ACCEPTED);
 
             orderFillService.fillOrder(payload);
         }
 
-        verify(fillsRepository, times(1)).save(fillCaptor.capture());
-        FillEntity captured = fillCaptor.getValue();
-        assertEquals(order.getOrderId(), captured.getOrderId());
-        assertEquals(order.getQuantity(), captured.getQuantity());
-        assertEquals(0, captured.getPrice().compareTo(new BigDecimal("180.00")));
+        verify(fillsRepository).saveAll(fillCaptor.capture());
+        List<FillEntity> capturedFills = fillCaptor.getValue();
+        capturedFills.forEach(fillEntity -> assertEquals(order.getOrderId(), fillEntity.getOrderId()));
+        capturedFills.forEach(fillEntity -> assertNotNull(fillEntity.getQuantity()));
+        capturedFills.forEach(fillEntity -> assertEquals(0, fillEntity.getPrice().compareTo(new BigDecimal("180.00"))));
 
-        verify(publisher, times(1)).publishEvent(any(OrderFillService.FillSavedEvent.class));
+        verify(publisher, times(1)).publishEvent(any(OrderFillService.FillsSavedEvent.class));
         verify(kafkaTemplate, never()).send(anyString(), anyString(), anyString());
     }
 
@@ -107,8 +101,8 @@ class OrderFillServiceTest {
             .build();
 
         // mock static decision to REJECTED
-        try (MockedStatic<ExecutionDecisionDecider> mock = Mockito.mockStatic(ExecutionDecisionDecider.class)) {
-            mock.when(ExecutionDecisionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.REJECTED);
+        try (MockedStatic<ExecutionDecider> mock = Mockito.mockStatic(ExecutionDecider.class)) {
+            mock.when(ExecutionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.REJECTED);
 
             // make mapper.serialize return some JSON
             when(mapper.writeValueAsString(any(OrdersRejected.class))).thenReturn("{\"orderId\":\"x\"}");
@@ -140,8 +134,8 @@ class OrderFillServiceTest {
         // price higher than limit for BUY should not fill
         when(priceGenerator.generatePrice(Symbol.AAPL)).thenReturn(new BigDecimal("160.00"));
 
-        try (MockedStatic<ExecutionDecisionDecider> mock = Mockito.mockStatic(ExecutionDecisionDecider.class)) {
-            mock.when(ExecutionDecisionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.ACCEPTED);
+        try (MockedStatic<ExecutionDecider> mock = Mockito.mockStatic(ExecutionDecider.class)) {
+            mock.when(ExecutionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.ACCEPTED);
 
             orderFillService.fillOrder(payload);
         }

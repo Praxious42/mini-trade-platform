@@ -17,6 +17,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +54,7 @@ class FillSavedListenerTest {
             .timestamp(ts)
             .build();
 
-        OrderFillService.FillSavedEvent event = new OrderFillService.FillSavedEvent(fill, accountId, Symbol.AAPL);
+        OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), accountId, Symbol.AAPL, orderId);
 
         String json = "{\"event\":\"orders-filled\"}";
         when(mapper.writeValueAsString(any())).thenReturn(json);
@@ -67,8 +68,7 @@ class FillSavedListenerTest {
         assertTrue(captured instanceof OrdersFilled);
 
         OrdersFilled of = (OrdersFilled) captured;
-        assertEquals(fillId, of.getEventId());
-        assertEquals(ts, of.getOccurredAt());
+        assertNotNull(of.getOccurredAt());
         assertEquals(orderId, of.getOrderId());
         assertEquals(accountId, of.getAccountId());
         assertEquals(Symbol.AAPL, of.getSymbol());
@@ -82,7 +82,7 @@ class FillSavedListenerTest {
         assertEquals(ts, fillDto.getTimestamp());
 
         // verify kafka send called with expected args
-        verify(kafkaTemplate, times(1)).send("orders.filled", fillId.toString(), json);
+        verify(kafkaTemplate, times(1)).send(eq("orders.filled"), anyString(), eq(json));
     }
 
     @Test
@@ -100,7 +100,7 @@ class FillSavedListenerTest {
             .timestamp(ts)
             .build();
 
-        OrderFillService.FillSavedEvent event = new OrderFillService.FillSavedEvent(fill, accountId, Symbol.AAPL);
+        OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), accountId, Symbol.AAPL, orderId);
 
         when(mapper.writeValueAsString(any())).thenThrow(new RuntimeException("boom"));
 
