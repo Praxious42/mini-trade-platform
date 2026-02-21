@@ -1,10 +1,10 @@
 package com.pbkour.mintrade.order.services;
 
-import com.pbkour.mintrade.commons.db.OrderEntity;
-import com.pbkour.mintrade.commons.db.OrdersRepository;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.*;
+import com.pbkour.mintrade.order.entities.OrderEntity;
+import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

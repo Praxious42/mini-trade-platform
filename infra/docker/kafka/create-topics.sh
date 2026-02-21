@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+﻿#!/usr/bin/env sh
 # create-topics.sh (line-by-line topics)
 # Idempotent topic creation script.
 # Reads topics from /topics.txt (one topic per line). Lines starting with # or empty lines are ignored.

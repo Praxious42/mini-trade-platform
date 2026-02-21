@@ -1,4 +1,4 @@
-package com.pbkour.mintrade.commons.db;
+package com.pbkour.mintrade.order.entities;
 
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.orders.Side;

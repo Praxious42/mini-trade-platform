@@ -1,12 +1,13 @@
-package com.pbkour.mintrade.commons.db;
+package com.pbkour.mintrade.execution.entities;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FillEntityTest {
 
@@ -19,15 +20,15 @@ class FillEntityTest {
             .price(new BigDecimal("12.34"))
             .build();
 
-        assertNull(fill.getTimestamp(), "timestamp should start null before persist");
+        Assertions.assertNull(fill.getTimestamp(), "timestamp should start null before persist");
 
         Instant before = Instant.now();
         fill.prePersistUpdate();
         Instant after = Instant.now();
 
-        assertNotNull(fill.getTimestamp(), "timestamp must be set by prePersistUpdate");
-        assertFalse(fill.getTimestamp().isBefore(before), "timestamp should be >= before time");
-        assertFalse(fill.getTimestamp().isAfter(after.plusSeconds(1)), "timestamp should not be in the future");
+        Assertions.assertNotNull(fill.getTimestamp(), "timestamp must be set by prePersistUpdate");
+        Assertions.assertFalse(fill.getTimestamp().isBefore(before), "timestamp should be >= before time");
+        Assertions.assertFalse(fill.getTimestamp().isAfter(after.plusSeconds(1)), "timestamp should not be in the future");
     }
 
     @Test

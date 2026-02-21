@@ -1,15 +1,3 @@
-DAY 7 — Portfolio-service: DB schema + entities
-Goal: Own portfolio state.
-Checklist:
-- Flyway V1: accounts, account_limits, positions, processed_events
-- JPA entities + repositories
-- Seed data strategy for demo (data.sql or migration)
-Acceptance:
-- Can create account + limits and read them from DB
-
-
----
-
 DAY 7 — Portfolio-service: consume orders.filled and apply to positions
 Goal: Update positions transactionally.
 Checklist:

@@ -1,12 +1,12 @@
 package com.pbkour.mintrade.order.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.commons.db.OrderEntity.OrderEntityValidationException;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
+import com.pbkour.mintrade.order.entities.OrderEntity.OrderEntityValidationException;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

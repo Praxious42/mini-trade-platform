@@ -47,7 +47,6 @@ services:
             - "1234:5432"
         volumes:
             - order-data:/var/lib/postgresql/data
-            - ./order/initdb.d:/docker-entrypoint-initdb.d:ro
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
             interval: 10s
@@ -88,13 +87,32 @@ services:
             - "1235:5432"
         volumes:
             - portfolio-data:/var/lib/postgresql/data
-            - ./portfolio/initdb.d:/docker-entrypoint-initdb.d:ro
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
             interval: 10s
             timeout: 5s
             retries: 10
             start_period: 10s
+        networks:
+            - mintrade-net
+
+    portfolio-init-runner:
+        image: postgres:15
+        container_name: portfolio-init-runner
+        depends_on:
+            mintrade-portfolio:
+                condition: service_healthy
+        environment:
+            PGUSER: postgres
+            PGPASSWORD: password
+            PGDATABASE: mintrade-portfolio
+            PGHOST: mintrade-portfolio
+            SCRIPTS_DIR: /scripts
+        volumes:
+            - ./portfolio/initdb.d:/scripts:ro
+            - ./portfolio/run-init.sh:/usr/local/bin/run-init.sh:ro
+        entrypoint: [ "/bin/sh","-c","/usr/local/bin/run-init.sh" ]
+        restart: "no"
         networks:
             - mintrade-net
 

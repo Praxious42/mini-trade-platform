@@ -24,6 +24,7 @@ public class FillSavedListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onSaved(OrderFillService.FillsSavedEvent e) {
+        log.info("Received FillsSavedEvent for orderId={}, preparing OrdersFilled event: {}", e.orderId(), e);
         List<Fill> fills = e.fills().stream().map(fillEntity ->
             Fill.builder()
                 .fillId(fillEntity.getId())
@@ -40,7 +41,7 @@ public class FillSavedListener {
             .orderId(e.orderId())
             .fills(fills)
             .build();
-        
+
         try {
             kafkaTemplate.send("orders.filled", payload.getEventId().toString(), mapper.writeValueAsString(payload));
             log.info("Order filled event sent to topic orders.filled for orderId={}", e.orderId());

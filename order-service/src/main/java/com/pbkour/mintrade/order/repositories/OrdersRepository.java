@@ -1,5 +1,6 @@
-package com.pbkour.mintrade.commons.db;
+package com.pbkour.mintrade.order.repositories;
 
+import com.pbkour.mintrade.order.entities.OrderEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
