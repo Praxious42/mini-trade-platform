@@ -85,6 +85,7 @@ public class PositionEntity {
         @Column(name = "account_id", nullable = false)
         private UUID accountId;
 
+        @Enumerated(EnumType.STRING)
         @Column(name = "symbol", nullable = false, length = 32)
         private Symbol symbol;
     }

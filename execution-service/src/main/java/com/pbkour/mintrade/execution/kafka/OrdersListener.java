@@ -19,7 +19,7 @@ public class OrdersListener {
     private final ObjectMapper objectMapper;
     private final OrderFillService orderFillService;
 
-    @KafkaListener(topics = "orders.created")
+    @KafkaListener(topics = "orders.created", groupId = "execution-service-group")
     public void onOrdersCreated(String message, @Header(name = "kafka_receivedMessageKey", required = false) String key) {
         try {
             if (message == null || message.isEmpty()) {

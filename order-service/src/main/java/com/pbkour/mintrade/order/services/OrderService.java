@@ -70,10 +70,12 @@ public class OrderService {
 
     @Transactional
     public void updateFilledOrder(OrdersFilled ordersFilled) {
+        log.info("Updating filled orders for {}", ordersFilled);
         UUID orderId = ordersFilled.getOrderId();
         ordersRepository.findById(orderId).ifPresentOrElse(
             order -> {
                 long quantityFilled = ordersFilled.getFills().stream().mapToLong(Fill::getQuantity).sum();
+                log.info("Total quantity filled for orderId={} is {}", orderId, quantityFilled);
                 order.setStatus(quantityFilled < order.getQuantity() ? Status.PARTIALLY_FILLED : Status.FILLED);
                 ordersRepository.save(order);
             },

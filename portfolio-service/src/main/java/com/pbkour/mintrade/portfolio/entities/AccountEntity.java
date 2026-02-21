@@ -22,13 +22,13 @@ public class AccountEntity {
     @Id
     @GeneratedValue
     private UUID id;
-    @Column(name = "equity", precision = 18, scale = 8)
+    @Column(name = "equity", precision = 18, scale = 8, nullable = false)
     private BigDecimal equity;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @PrePersist
-    public void prePersistUpdate() throws AccountEntityValidationException {
+    public void prePersist() throws AccountEntityValidationException {
         createdAt = Instant.now();
         validate();
     }

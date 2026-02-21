@@ -18,7 +18,7 @@ class AccountLimitEntityTest {
             .marginRateStock(new BigDecimal("0.2"))
             .build();
 
-        assertDoesNotThrow(entity::prePersistUpdate);
+        assertDoesNotThrow(entity::prePersist);
         assertNotNull(entity.getCreatedAt());
         assertNotNull(entity.getUpdatedAt());
     }
@@ -30,21 +30,21 @@ class AccountLimitEntityTest {
             .maxNotional(new BigDecimal("-1.00"))
             .build();
 
-        assertThrows(AccountLimitEntity.AccountLimitEntityValidationException.class, negNotional::prePersistUpdate);
+        assertThrows(AccountLimitEntity.AccountLimitEntityValidationException.class, negNotional::prePersist);
 
         AccountLimitEntity zeroPos = AccountLimitEntity.builder()
             .accountId(java.util.UUID.randomUUID())
             .maxPosPerSymbol(new BigDecimal("0"))
             .build();
 
-        assertThrows(AccountLimitEntity.AccountLimitEntityValidationException.class, zeroPos::prePersistUpdate);
+        assertThrows(AccountLimitEntity.AccountLimitEntityValidationException.class, zeroPos::prePersist);
 
         AccountLimitEntity badFx = AccountLimitEntity.builder()
             .accountId(java.util.UUID.randomUUID())
             .marginRateFx(new BigDecimal("1.5"))
             .build();
 
-        assertThrows(AccountLimitEntity.AccountLimitEntityValidationException.class, badFx::prePersistUpdate);
+        assertThrows(AccountLimitEntity.AccountLimitEntityValidationException.class, badFx::prePersist);
     }
 }
 

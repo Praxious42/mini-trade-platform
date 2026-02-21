@@ -22,13 +22,13 @@ public class AccountLimitEntity {
     @Id
     @Column(name = "account_id", nullable = false, unique = true)
     private UUID accountId;
-    @Column(name = "max_notional", precision = 19, scale = 4)
+    @Column(name = "max_notional", precision = 19, scale = 4, nullable = false)
     private BigDecimal maxNotional;
-    @Column(name = "max_pos_per_symbol", precision = 19, scale = 4)
+    @Column(name = "max_pos_per_symbol", precision = 19, scale = 4, nullable = false)
     private BigDecimal maxPosPerSymbol;
-    @Column(name = "margin_rate_fx", precision = 6, scale = 5)
+    @Column(name = "margin_rate_fx", precision = 6, scale = 5, nullable = false)
     private BigDecimal marginRateFx;
-    @Column(name = "margin_rate_stock", precision = 6, scale = 5)
+    @Column(name = "margin_rate_stock", precision = 6, scale = 5, nullable = false)
     private BigDecimal marginRateStock;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -36,7 +36,7 @@ public class AccountLimitEntity {
     private Instant updatedAt;
 
     @PrePersist
-    public void prePersistUpdate() throws AccountLimitEntityValidationException {
+    public void prePersist() throws AccountLimitEntityValidationException {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;

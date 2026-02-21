@@ -14,7 +14,7 @@ class AccountEntityTest {
             .equity(new BigDecimal("100.00"))
             .build();
 
-        assertDoesNotThrow(entity::prePersistUpdate);
+        assertDoesNotThrow(entity::prePersist);
         assertNotNull(entity.getCreatedAt());
     }
 
@@ -24,13 +24,13 @@ class AccountEntityTest {
             .equity(null)
             .build();
 
-        assertThrows(AccountEntity.AccountEntityValidationException.class, nullEquity::prePersistUpdate);
+        assertThrows(AccountEntity.AccountEntityValidationException.class, nullEquity::prePersist);
 
         AccountEntity negative = AccountEntity.builder()
             .equity(new BigDecimal("-0.0001"))
             .build();
 
-        assertThrows(AccountEntity.AccountEntityValidationException.class, negative::prePersistUpdate);
+        assertThrows(AccountEntity.AccountEntityValidationException.class, negative::prePersist);
     }
 }
 

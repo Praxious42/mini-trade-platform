@@ -1,10 +1,5 @@
--- V10__seed_demo_account.sql
--- Seed a demo account and its account_limits if they don't already exist.
--- This is idempotent and safe to run multiple times.
+﻿BEGIN;
 
-BEGIN;
-
--- Insert account if not exists
 INSERT INTO accounts (id, equity)
 SELECT '3fa85f64-5717-4562-b3fc-2c963f66afa6'::uuid, 0
 WHERE NOT EXISTS (
@@ -22,4 +17,3 @@ AND EXISTS (
 );
 
 COMMIT;
-

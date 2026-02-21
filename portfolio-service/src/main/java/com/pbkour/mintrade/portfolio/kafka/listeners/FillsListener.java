@@ -17,7 +17,7 @@ public class FillsListener {
     private final ObjectMapper objectMapper;
     private final PortfolioService portfolioService;
 
-    @KafkaListener(topics = "orders.filled")
+    @KafkaListener(topics = "orders.filled", groupId = "portfolio-service-group")
     public void onOrdersFilled(String message, @Header(name = "kafka_receivedMessageKey", required = false) String key) {
         try {
             OrdersFilled payload = objectMapper.readValue(message, OrdersFilled.class);

@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+﻿CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS account_limits (
     account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS account_limits (
     max_pos_per_symbol  NUMERIC(19,4) NOT NULL DEFAULT 1000.0000,
     margin_rate_fx NUMERIC(6,5) NOT NULL DEFAULT 0.02000,
     margin_rate_stock NUMERIC(6,5) NOT NULL DEFAULT 0.50000,
-    created_at TIMESTAMP NOT NULL DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT now() NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 
     CONSTRAINT chk_limits_positive
         CHECK (max_notional > 0 AND max_pos_per_symbol > 0),
@@ -18,11 +18,11 @@ CREATE TABLE IF NOT EXISTS account_limits (
 );
 
 CREATE TABLE IF NOT EXISTS positions (
-    account_id UUID NOT NULL,
+    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     symbol VARCHAR(32) NOT NULL,
     net_qty NUMERIC(19,4) NOT NULL,
     avg_price NUMERIC(19,5) NOT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     PRIMARY KEY (account_id, symbol),
 
     CONSTRAINT chk_symbol_not_blank CHECK (length(trim(symbol)) > 0),
@@ -34,5 +34,5 @@ CREATE INDEX IF NOT EXISTS idx_positions_account ON positions(account_id);
 
 CREATE TABLE IF NOT EXISTS processed_events (
     event_id UUID PRIMARY KEY,
-    processed_at TIMESTAMP NOT NULL
+    processed_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
