@@ -1,5 +1,6 @@
-package com.pbkour.mintrade.commons.db;
+package com.pbkour.mintrade.execution.repositories;
 
+import com.pbkour.mintrade.execution.entities.FillEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

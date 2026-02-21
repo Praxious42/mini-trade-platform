@@ -1,4 +1,4 @@
-package com.pbkour.mintrade.commons.db;
+package com.pbkour.mintrade.execution.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

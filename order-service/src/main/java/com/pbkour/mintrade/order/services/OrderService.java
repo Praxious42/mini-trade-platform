@@ -1,12 +1,12 @@
 package com.pbkour.mintrade.order.services;
 
-import com.pbkour.mintrade.commons.db.OrderEntity;
-import com.pbkour.mintrade.commons.db.OrdersRepository;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
+import com.pbkour.mintrade.order.entities.OrderEntity;
+import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;

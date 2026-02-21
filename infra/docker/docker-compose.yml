@@ -98,6 +98,26 @@ services:
         networks:
             - mintrade-net
 
+    portfolio-init-runner:
+        image: postgres:15
+        container_name: portfolio-init-runner
+        depends_on:
+            mintrade-portfolio:
+                condition: service_healthy
+        environment:
+            PGUSER: postgres
+            PGPASSWORD: password
+            PGDATABASE: mintrade-portfolio
+            PGHOST: mintrade-portfolio
+            SCRIPTS_DIR: /scripts
+        volumes:
+            - ./portfolio/initdb.d:/scripts:ro
+            - ./portfolio/run-init.sh:/usr/local/bin/run-init.sh:ro
+        entrypoint: [ "/bin/sh","-c","/usr/local/bin/run-init.sh" ]
+        restart: "no"
+        networks:
+            - mintrade-net
+
 volumes:
     kafka-data:
     order-data:

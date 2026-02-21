@@ -3,6 +3,7 @@ package com.pbkour.mintrade.order.spring.listeners;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersCreated;
+import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class OrderSavedListener {
         OrdersCreated payload = OrdersCreated.builder()
             .eventId(UUID.randomUUID())
             .occurredAt(e.order().getCreatedAt())
-            .order(Order.mapToOrder(e.order()))
+            .order(mapToOrder(e.order()))
             .build();
 
         try {
@@ -34,5 +35,17 @@ public class OrderSavedListener {
         } catch (Exception ex) {
             log.error("Failed to serialize or send OrdersCreated for orderId={}", e.order().getId(), ex);
         }
+    }
+
+    private Order mapToOrder(OrderEntity orderEntity) {
+        return Order.builder()
+            .orderId(orderEntity.getId())
+            .accountId(orderEntity.getAccountId())
+            .symbol(orderEntity.getSymbol())
+            .side(orderEntity.getSide())
+            .type(orderEntity.getType())
+            .quantity(orderEntity.getQuantity())
+            .limitPrice(orderEntity.getLimitPrice())
+            .build();
     }
 }

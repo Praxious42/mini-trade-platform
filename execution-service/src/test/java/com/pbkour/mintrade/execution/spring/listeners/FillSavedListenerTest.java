@@ -1,10 +1,10 @@
 package com.pbkour.mintrade.execution.spring.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.commons.db.FillEntity;
 import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.orders.Symbol;
+import com.pbkour.mintrade.execution.entities.FillEntity;
 import com.pbkour.mintrade.execution.services.OrderFillService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
