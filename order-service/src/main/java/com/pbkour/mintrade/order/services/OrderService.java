@@ -3,6 +3,7 @@ package com.pbkour.mintrade.order.services;
 import com.pbkour.mintrade.commons.db.OrderEntity;
 import com.pbkour.mintrade.commons.db.OrdersRepository;
 import com.pbkour.mintrade.commons.dto.Order;
+import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
@@ -72,7 +73,8 @@ public class OrderService {
         UUID orderId = ordersFilled.getOrderId();
         ordersRepository.findById(orderId).ifPresentOrElse(
             order -> {
-                order.setStatus(ordersFilled.getFills().size() > 1 ? Status.PARTIALLY_FILLED : Status.FILLED);
+                long quantityFilled = ordersFilled.getFills().stream().mapToLong(Fill::getQuantity).sum();
+                order.setStatus(quantityFilled < order.getQuantity() ? Status.PARTIALLY_FILLED : Status.FILLED);
                 ordersRepository.save(order);
             },
             () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)
