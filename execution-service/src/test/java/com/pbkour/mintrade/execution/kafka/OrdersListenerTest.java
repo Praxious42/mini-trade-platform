@@ -32,7 +32,7 @@ class OrdersListenerTest {
                 .orderId(UUID.randomUUID())
                 .accountId(UUID.randomUUID())
                 .limitPrice(BigDecimal.valueOf(123.45))
-                .quantity(10L)
+                .quantity(new BigDecimal("10"))
                 .build())
             .build();
 

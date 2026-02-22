@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -74,9 +75,9 @@ public class OrderService {
         UUID orderId = ordersFilled.getOrderId();
         ordersRepository.findById(orderId).ifPresentOrElse(
             order -> {
-                long quantityFilled = ordersFilled.getFills().stream().mapToLong(Fill::getQuantity).sum();
+                BigDecimal quantityFilled = ordersFilled.getFills().stream().map(Fill::getQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
                 log.info("Total quantity filled for orderId={} is {}", orderId, quantityFilled);
-                order.setStatus(quantityFilled < order.getQuantity() ? Status.PARTIALLY_FILLED : Status.FILLED);
+                order.setStatus(quantityFilled.compareTo(order.getQuantity()) < 0 ? Status.PARTIALLY_FILLED : Status.FILLED);
                 ordersRepository.save(order);
             },
             () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)

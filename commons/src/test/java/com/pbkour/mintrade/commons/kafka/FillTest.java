@@ -26,7 +26,7 @@ class FillTest {
 
         Fill fill = Fill.builder()
             .fillId(id)
-            .quantity(100L)
+            .quantity(BigDecimal.valueOf(100))
             .price(new BigDecimal("123.45"))
             .timestamp(ts)
             .build();

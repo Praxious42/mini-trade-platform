@@ -26,8 +26,8 @@ public class FillEntity {
     private UUID id;
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
-    @Column(name = "qty", nullable = false)
-    private Long quantity;
+    @Column(name = "qty", precision = 19, scale = 4, nullable = false)
+    private BigDecimal quantity;
     @Column(name = "price", precision = 18, scale = 8, nullable = false)
     private BigDecimal price;
     @Column(name = "ts", nullable = false)
@@ -46,7 +46,7 @@ public class FillEntity {
         if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
             throw new FillEntityValidationException("price is invalid");
         }
-        if (quantity == null || quantity <= 0) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new FillEntityValidationException("quantity is invalid");
         }
     }

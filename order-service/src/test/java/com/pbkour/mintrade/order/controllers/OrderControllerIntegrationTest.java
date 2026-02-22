@@ -60,7 +60,7 @@ class OrderControllerIntegrationTest {
         assertThat(entities).isNotNull().hasSizeGreaterThanOrEqualTo(1);
 
         OrderEntity created = entities.stream()
-            .filter(e -> e.getSymbol().name().equals(node.get("symbol").asText()) && node.get("quantity").asLong() == e.getQuantity())
+            .filter(e -> e.getSymbol().name().equals(node.get("symbol").asText()) && node.get("quantity").decimalValue().compareTo(e.getQuantity()) == 0)
             .findFirst()
             .orElseThrow();
 

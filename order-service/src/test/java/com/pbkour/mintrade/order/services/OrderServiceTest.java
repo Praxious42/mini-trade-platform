@@ -52,7 +52,7 @@ class OrderServiceTest {
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
             .type(Type.LIMIT)
-            .quantity(100L)
+            .quantity(BigDecimal.valueOf(100))
             .limitPrice(new BigDecimal("150.50"))
             .build();
     }

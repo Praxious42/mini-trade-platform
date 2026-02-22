@@ -15,7 +15,7 @@ until pg_isready -h "${PGHOST}" -U "${PGUSER}" -d "${PGDATABASE}" >/dev/null 2>&
   sleep 1
 done
 
-echo "Postgres is up — running scripts in ${SCRIPTS_DIR}"
+echo "Postgres is up running scripts in ${SCRIPTS_DIR}"
 
 # Iterate files in lexicographic order (shell globbing order)
 for filepath in "${SCRIPTS_DIR}"/*; do

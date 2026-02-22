@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersCreated;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
-import com.pbkour.mintrade.commons.orders.*;
+import com.pbkour.mintrade.commons.orders.ExecutionDecision;
+import com.pbkour.mintrade.commons.orders.RejectionReason;
+import com.pbkour.mintrade.commons.orders.Side;
+import com.pbkour.mintrade.commons.orders.Type;
 import com.pbkour.mintrade.execution.entities.FillEntity;
 import com.pbkour.mintrade.execution.generators.ExecutionDecider;
 import com.pbkour.mintrade.execution.generators.PriceGenerator;
@@ -53,7 +56,7 @@ public class OrderFillService {
         }
 
         log.info("Filling order {} with price {}", order.getSymbol(), price);
-        List<Long> partialFills = ExecutionDecider.getPartialFills(order.getQuantity());
+        List<BigDecimal> partialFills = ExecutionDecider.getPartialFills(order.getQuantity());
         log.info("Fill quantities: {}", partialFills);
         List<FillEntity> fillEntities = partialFills.stream().map(qty -> FillEntity.builder()
             .orderId(order.getOrderId())
@@ -63,7 +66,7 @@ public class OrderFillService {
 
         List<FillEntity> savedFillEntities = fillsRepository.saveAll(fillEntities);
 
-        publisher.publishEvent(new FillsSavedEvent(savedFillEntities, order.getAccountId(), order.getSymbol(), order.getOrderId()));
+        publisher.publishEvent(new FillsSavedEvent(savedFillEntities, order));
     }
 
     private void rejectOrder(OrdersCreated payload) {
@@ -82,6 +85,6 @@ public class OrderFillService {
         }
     }
 
-    public record FillsSavedEvent(List<FillEntity> fills, UUID accountId, Symbol symbol, UUID orderId) {
+    public record FillsSavedEvent(List<FillEntity> fills, Order order) {
     }
 }

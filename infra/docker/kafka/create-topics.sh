@@ -104,4 +104,3 @@ done
 
 echo "All requested topics processed."
 exit 0
-

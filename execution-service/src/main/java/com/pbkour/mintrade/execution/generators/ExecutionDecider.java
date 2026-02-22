@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Slf4j
@@ -13,15 +15,16 @@ public class ExecutionDecider {
     private static final double DEFAULT_REJECTION_RATE = 0.05;
     private static final double DEFAULT_PARTIAL_FILL_RATE = 0.5;
 
-    public static List<Long> getPartialFills(long quantity) {
+    public static List<BigDecimal> getPartialFills(BigDecimal quantity) {
         return getPartialFills(quantity, DEFAULT_PARTIAL_FILL_RATE);
     }
 
-    protected static List<Long> getPartialFills(long quantity, double partialFillRate) {
+    protected static List<BigDecimal> getPartialFills(BigDecimal quantity, double partialFillRate) {
         double randomValue = Math.random();
         if (randomValue < partialFillRate) {
             log.info("This is a partial fill");
-            return List.of(quantity / 2, quantity - quantity / 2);
+            BigDecimal half = quantity.divide(BigDecimal.valueOf(2), 0, RoundingMode.DOWN);
+            return List.of(half, quantity.subtract(half));
         }
 
         return List.of(quantity);

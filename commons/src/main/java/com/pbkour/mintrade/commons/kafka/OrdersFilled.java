@@ -1,5 +1,6 @@
 package com.pbkour.mintrade.commons.kafka;
 
+import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,5 +18,6 @@ public class OrdersFilled extends KafkaPayload {
     private UUID orderId;
     private UUID accountId;
     private Symbol symbol;
+    private Side side;
     private List<Fill> fills;
 }
