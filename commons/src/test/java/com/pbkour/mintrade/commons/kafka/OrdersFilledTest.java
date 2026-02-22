@@ -5,6 +5,7 @@ import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +30,7 @@ class OrdersFilledTest {
             assertEquals(2, payload.getFills().size());
 
             // verify a fill value
-            assertEquals(50L, payload.getFills().get(0).getQuantity());
+            assertEquals(BigDecimal.valueOf(50L), payload.getFills().get(0).getQuantity());
             assertEquals(UUID.fromString("44444444-4444-4444-4444-444444444444"), payload.getFills().get(0).getFillId());
 
             // round-trip
