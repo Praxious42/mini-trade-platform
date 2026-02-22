@@ -32,6 +32,7 @@ public class OrderService {
     private final OrdersRepository ordersRepository;
     private final ApplicationEventPublisher publisher;
     private final RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
+    private final RejectedOrderService rejectedOrderService;
 
     @Transactional
     public UUID createOrder(Order order) {
@@ -39,6 +40,8 @@ public class OrderService {
         if (!riskCheckResponse.getAllowed()) {
             log.info("Order rejected by risk check for accountId={}, symbol={}, side={}, quantity={}: {}",
                 order.getAccountId(), order.getSymbol(), order.getSide(), order.getQuantity(), riskCheckResponse.getReason());
+            // persist rejected order in a separate transaction so it isn't rolled back with the outer transaction
+            rejectedOrderService.persistRejectedOrder(order);
             throw new OrderRejectedException("Order rejected by risk check: " + riskCheckResponse.getReason());
         }
 
@@ -59,6 +62,7 @@ public class OrderService {
 
         return savedOrder.getId();
     }
+
 
     public Order getOrder(UUID id) {
         return ordersRepository.findById(id)

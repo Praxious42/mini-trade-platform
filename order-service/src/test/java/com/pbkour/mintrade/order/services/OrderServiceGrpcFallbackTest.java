@@ -27,6 +27,8 @@ class OrderServiceGrpcFallbackTest {
 
     @Mock
     private RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
+    @Mock
+    private RejectedOrderService rejectedOrderService;
 
     @InjectMocks
     private OrderService orderService;
