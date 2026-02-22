@@ -75,6 +75,7 @@ public class RiskService {
 
         BigDecimal availableMargin = equity.subtract(usedMargin);
 
+        // notional check is for a single transaction, not the account as a whole
         if (orderNotional.compareTo(maxNotional) > 0) {
             return RiskCheckResult.builder()
                 .allowed(false)
