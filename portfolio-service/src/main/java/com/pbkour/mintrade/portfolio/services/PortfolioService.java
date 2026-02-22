@@ -1,27 +1,39 @@
 package com.pbkour.mintrade.portfolio.services;
 
+import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
+import com.pbkour.mintrade.commons.orders.Side;
+import com.pbkour.mintrade.portfolio.entities.AccountEntity;
+import com.pbkour.mintrade.portfolio.entities.PositionEntity;
 import com.pbkour.mintrade.portfolio.entities.ProcessedEventEntity;
+import com.pbkour.mintrade.portfolio.repositories.AccountsRepository;
 import com.pbkour.mintrade.portfolio.repositories.PositionsRepository;
 import com.pbkour.mintrade.portfolio.repositories.ProcessedEventsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.UUID;
+
+import static java.util.Optional.ofNullable;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PortfolioService {
     private final PositionsRepository positionsRepository;
+    private final AccountsRepository accountsRepository;
     private final ProcessedEventsRepository processedEventsRepository;
 
     @Transactional
     public void processOrdersFilled(OrdersFilled payload) {
+        // Idempotency check using eventId
         UUID eventId = payload.getEventId();
         if (eventId == null) {
             log.warn("Received OrdersFilled with null eventId, skipping");
@@ -41,65 +53,115 @@ public class PortfolioService {
             return;
         }
 
-        //TODO uncomment the below and fix it, that only understand positive values, we need to update  the OrdersFilled to have a side to correctly compute the current positions
-        // Apply fills to positions (simple aggregate: assume fills are positive buys)
-//        try {
-//            UUID accountId = payload.getAccountId();
-//            Symbol symbol = payload.getSymbol();
-//
-//            List<Fill> fills = payload.getFills();
-//            if (fills == null || fills.isEmpty()) {
-//                log.info("OrdersFilled has no fills for eventId={}, marking processed", eventId);
-//                return;
-//            }
-//
-//            // compute total quantity and average fill price (weighted)
-//            BigDecimal totalQty = BigDecimal.ZERO;
-//            BigDecimal weightedPriceSum = BigDecimal.ZERO;
-//            for (Fill f : fills) {
-//                BigDecimal qty = BigDecimal.valueOf(f.getQuantity());
-//                totalQty = totalQty.add(qty);
-//                weightedPriceSum = weightedPriceSum.add(f.getPrice().multiply(qty));
-//            }
-//            if (totalQty.compareTo(BigDecimal.ZERO) == 0) {
-//                log.info("Total fill quantity is zero for eventId={}, marking processed", eventId);
-//                return;
-//            }
-//
-//            PositionEntity.PositionId pid = new PositionEntity.PositionId(accountId, symbol);
-//            PositionEntity existing = positionsRepository.findById(pid).orElse(null);
-//
-//            BigDecimal existingQty = BigDecimal.ZERO;
-//            BigDecimal existingAvg = BigDecimal.ZERO;
-//            if (existing != null) {
-//                existingQty = existing.getNetQty();
-//                existingAvg = existing.getAvgPrice();
-//            }
-//
-//            BigDecimal avgFillPrice = weightedPriceSum.divide(totalQty, 8, RoundingMode.HALF_UP);
-//            BigDecimal newQty = existingQty.add(totalQty);
-//            BigDecimal newAvg;
-//            if (newQty.compareTo(BigDecimal.ZERO) == 0) {
-//                newAvg = BigDecimal.ZERO;
-//            } else {
-//                BigDecimal existingValue = existingQty.multiply(existingAvg);
-//                BigDecimal fillValue = totalQty.multiply(avgFillPrice);
-//                newAvg = existingValue.add(fillValue).divide(newQty, 8, RoundingMode.HALF_UP);
-//            }
-//
-//            PositionEntity posToSave = PositionEntity.builder()
-//                .id(pid)
-//                .netQty(newQty.setScale(4, RoundingMode.HALF_UP))
-//                .avgPrice(newAvg.setScale(5, RoundingMode.HALF_UP))
-//                .build();
-//
-//            positionsRepository.save(posToSave);
-//
-//            log.info("Processed OrdersFilled eventId={} accountId={} symbol={} qty={} avgPrice={}",
-//                eventId, accountId, symbol, totalQty, avgFillPrice);
-//        } catch (Exception e) {
-//            log.error("Failed to process OrdersFilled eventId={}", payload.getEventId(), e);
-//            throw e;
-//        }
+        // Update account equity based on fills
+        try {
+            AccountEntity account = accountsRepository.findById(payload.getAccountId())
+                .orElseThrow(() -> new PortfolioServiceException("Account not found with id=" + payload.getAccountId()));
+            BigDecimal equity = account.getEquity();
+            BigDecimal equityToAddReduce = payload.getFills().stream().map(fill -> fill.getQuantity().multiply(fill.getPrice())).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal newEquity;
+
+            if (payload.getSide() == Side.BUY) {
+                newEquity = equity.subtract(equityToAddReduce);
+            } else {
+                newEquity = equity.add(equityToAddReduce);
+            }
+
+            account.setEquity(newEquity);
+            accountsRepository.save(account);
+
+        } catch (Exception e) {
+            log.error("Failed to update account during OrdersFilled eventId={}", payload.getEventId(), e);
+            throw e;
+        }
+
+        // Process the fills and update positions
+        try {
+            PositionEntity.PositionId pid = new PositionEntity.PositionId(payload.getAccountId(), payload.getSymbol());
+            PositionEntity oldPosition = positionsRepository.findById(pid).orElse(null);
+            Side side = ofNullable(payload.getSide()).orElseThrow(() -> new PortfolioServiceException("Side is required in OrdersFilled eventId=" + payload.getEventId()));
+
+            NewPosition newPosition;
+            if (side.equals(Side.BUY)) {
+                log.info("Received OrdersFilled with SIDE=BUY");
+                newPosition = increasePosition(payload, oldPosition);
+            } else {
+                log.info("Received OrdersFilled with SIDE=LIMIT");
+                newPosition = decreasePosition(payload, oldPosition);
+            }
+
+            PositionEntity posToSave = PositionEntity.builder()
+                .id(pid)
+                .netQty(newPosition.netQty())
+                .avgPrice(newPosition.avgPrice())
+                .build();
+
+            positionsRepository.save(posToSave);
+
+            log.info("New position saved with id={}", posToSave.getId());
+        } catch (Exception e) {
+            log.error("Failed to update positions during OrdersFilled eventId={}", payload.getEventId(), e);
+            throw e;
+        }
+    }
+
+    private NewPosition decreasePosition(OrdersFilled payload, PositionEntity oldPosition) {
+        BigDecimal newQuantityToDecrease = payload.getFills().stream()
+            .map(Fill::getQuantity)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (oldPosition == null) {
+            log.error("Attempting to decrease position that does not exist. accountId={} symbol={} decreaseBy={}",
+                payload.getAccountId(), payload.getSymbol(), newQuantityToDecrease);
+            throw new IllegalStateException("Cannot decrease position that does not exist");
+        }
+
+        if (oldPosition.getNetQty().compareTo(newQuantityToDecrease) < 0) {
+            log.error("Attempting to decrease position more than existing quantity. accountId={} symbol={} oldQty={} decreaseBy={}",
+                payload.getAccountId(), payload.getSymbol(), oldPosition.getNetQty(), newQuantityToDecrease);
+            throw new IllegalStateException("Cannot decrease position more than existing quantity");
+        }
+
+        BigDecimal newTotalQuantity = oldPosition.getNetQty().subtract(newQuantityToDecrease);
+
+        if (newTotalQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+            return new NewPosition(BigDecimal.ZERO, BigDecimal.ZERO);
+        }
+
+        return new NewPosition(newTotalQuantity, oldPosition.getAvgPrice());
+    }
+
+    private NewPosition increasePosition(OrdersFilled payload, PositionEntity oldPosition) {
+        BigDecimal newQuantity = payload.getFills().stream()
+            .map(Fill::getQuantity)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal newPrice = payload.getFills().stream()
+            .map(fill -> fill.getQuantity().multiply(fill.getPrice()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(newQuantity, 2, RoundingMode.HALF_UP);
+
+        if (oldPosition == null || oldPosition.getNetQty().compareTo(BigDecimal.ZERO) <= 0) {
+            return new NewPosition(newQuantity, newPrice);
+        } else {
+            //new_avg = (old_qty * old_avg + fill_qty * fill_price) / (old_qty + fill_qty)
+            BigDecimal oldQuantity = oldPosition.getNetQty();
+            BigDecimal oldAvgPrice = oldPosition.getAvgPrice();
+            BigDecimal oldPrice = oldQuantity.multiply(oldAvgPrice);
+
+            BigDecimal newValue = newQuantity.multiply(newPrice);
+            BigDecimal sumPrice = oldPrice.add(newValue);
+
+            BigDecimal newTotalQuantity = oldQuantity.add(newQuantity);
+            BigDecimal newAvgPrice = sumPrice.divide(newTotalQuantity, 2, RoundingMode.HALF_UP);
+
+            return new NewPosition(newTotalQuantity, newAvgPrice);
+        }
+    }
+
+    private record NewPosition(BigDecimal netQty, BigDecimal avgPrice) {
+    }
+
+    @StandardException
+    public static class PortfolioServiceException extends RuntimeException {
     }
 }

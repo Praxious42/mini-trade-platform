@@ -34,7 +34,7 @@ services:
         volumes:
             - ./kafka/create-topics.sh:/create-topics.sh:ro
             - ./kafka/topics.txt:/topics.txt:ro
-        entrypoint: [ "/bin/sh","-c","/create-topics.sh" ]
+        entrypoint: [ "/bin/sh","-c","sh /create-topics.sh" ]
 
     mintrade-order:
         image: postgres:15

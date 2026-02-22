@@ -2,6 +2,7 @@ package com.pbkour.mintrade.execution.spring.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.kafka.Fill;
+import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.execution.entities.FillEntity;
@@ -49,12 +50,14 @@ class FillSavedListenerTest {
         FillEntity fill = FillEntity.builder()
             .id(fillId)
             .orderId(orderId)
-            .quantity(50L)
+            .quantity(new BigDecimal("50"))
             .price(new BigDecimal("123.45"))
             .timestamp(ts)
             .build();
 
-        OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), accountId, Symbol.AAPL, orderId);
+        Order order = Order.builder().orderId(orderId).accountId(accountId).symbol(Symbol.AAPL).build();
+
+        OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), order);
 
         String json = "{\"event\":\"orders-filled\"}";
         when(mapper.writeValueAsString(any())).thenReturn(json);
@@ -77,7 +80,7 @@ class FillSavedListenerTest {
 
         Fill fillDto = of.getFills().get(0);
         assertEquals(fillId, fillDto.getFillId());
-        assertEquals(50L, fillDto.getQuantity());
+        assertEquals(0, (new BigDecimal("50")).compareTo(fillDto.getQuantity()));
         assertEquals(new BigDecimal("123.45"), fillDto.getPrice());
         assertEquals(ts, fillDto.getTimestamp());
 
@@ -95,12 +98,14 @@ class FillSavedListenerTest {
         FillEntity fill = FillEntity.builder()
             .id(fillId)
             .orderId(orderId)
-            .quantity(10L)
+            .quantity(new BigDecimal("10"))
             .price(new BigDecimal("10.00"))
             .timestamp(ts)
             .build();
 
-        OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), accountId, Symbol.AAPL, orderId);
+        Order order = Order.builder().orderId(orderId).accountId(accountId).symbol(Symbol.AAPL).build();
+
+        OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), order);
 
         when(mapper.writeValueAsString(any())).thenThrow(new RuntimeException("boom"));
 
@@ -110,4 +115,3 @@ class FillSavedListenerTest {
         verify(kafkaTemplate, never()).send(anyString(), anyString(), anyString());
     }
 }
-

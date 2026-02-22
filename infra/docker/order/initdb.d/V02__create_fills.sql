@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS fills (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     order_id UUID NOT NULL REFERENCES orders(id),
-    qty BIGINT NOT NULL,
+    qty NUMERIC(19,4) NOT NULL,
     price NUMERIC(18,8) NOT NULL,
     ts TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

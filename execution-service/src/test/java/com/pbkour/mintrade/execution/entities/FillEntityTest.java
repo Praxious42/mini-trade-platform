@@ -16,7 +16,7 @@ class FillEntityTest {
         UUID orderId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         FillEntity fill = FillEntity.builder()
             .orderId(orderId)
-            .quantity(5L)
+            .quantity(new BigDecimal("5"))
             .price(new BigDecimal("12.34"))
             .build();
 
@@ -34,7 +34,7 @@ class FillEntityTest {
     @Test
     void prePersist_throws_whenOrderIdIsNull() {
         FillEntity fill = FillEntity.builder()
-            .quantity(1L)
+            .quantity(new BigDecimal("1"))
             .price(new BigDecimal("1.00"))
             .build();
 
@@ -45,7 +45,7 @@ class FillEntityTest {
     void prePersist_throws_whenPriceIsNull() {
         FillEntity fill = FillEntity.builder()
             .orderId(UUID.randomUUID())
-            .quantity(1L)
+            .quantity(new BigDecimal("1"))
             .price(null)
             .build();
 
@@ -56,7 +56,7 @@ class FillEntityTest {
     void prePersist_throws_whenPriceIsNegative() {
         FillEntity fill = FillEntity.builder()
             .orderId(UUID.randomUUID())
-            .quantity(1L)
+            .quantity(new BigDecimal("1"))
             .price(new BigDecimal("-0.01"))
             .build();
 
@@ -75,7 +75,7 @@ class FillEntityTest {
 
         FillEntity zeroQty = FillEntity.builder()
             .orderId(UUID.randomUUID())
-            .quantity(0L)
+            .quantity(new BigDecimal("0"))
             .price(new BigDecimal("1.00"))
             .build();
 
@@ -83,7 +83,7 @@ class FillEntityTest {
 
         FillEntity negQty = FillEntity.builder()
             .orderId(UUID.randomUUID())
-            .quantity(-5L)
+            .quantity(new BigDecimal("-5"))
             .price(new BigDecimal("1.00"))
             .build();
 

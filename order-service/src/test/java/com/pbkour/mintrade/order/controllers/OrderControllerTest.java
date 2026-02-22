@@ -78,7 +78,7 @@ class OrderControllerTest {
             assertEquals(Symbol.AAPL, captured.getSymbol());
             assertEquals(Side.BUY, captured.getSide());
             assertEquals(Type.LIMIT, captured.getType());
-            assertEquals(Long.valueOf(100L), captured.getQuantity());
+            assertEquals(BigDecimal.valueOf(100L), captured.getQuantity());
             assertEquals(new BigDecimal("150.50"), captured.getLimitPrice());
         }
     }
@@ -133,7 +133,7 @@ class OrderControllerTest {
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
             .type(Type.LIMIT)
-            .quantity(100L)
+            .quantity(BigDecimal.valueOf(100))
             .limitPrice(new BigDecimal("150.50"))
             .build();
 
@@ -154,7 +154,7 @@ class OrderControllerTest {
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
             .type(Type.LIMIT)
-            .quantity(100L)
+            .quantity(BigDecimal.valueOf(100))
             .limitPrice(new BigDecimal("150.50"))
             .build();
 

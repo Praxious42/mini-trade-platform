@@ -38,8 +38,8 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private Type type;
-    @Column(name = "qty", nullable = false)
-    private Long quantity;
+    @Column(name = "qty", precision = 19, scale = 4, nullable = false)
+    private BigDecimal quantity;
     @Column(name = "limit_price", precision = 18, scale = 8)
     private BigDecimal limitPrice;
     @Enumerated(EnumType.STRING)
@@ -93,7 +93,7 @@ public class OrderEntity {
         if (type == null) {
             throw new OrderEntityValidationException("Type must be specified");
         }
-        if (quantity == null || quantity <= 0) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new OrderEntityValidationException("Quantity must be a positive number");
         }
         if (type == Type.LIMIT && (limitPrice == null || limitPrice.compareTo(BigDecimal.ZERO) <= 0)) {

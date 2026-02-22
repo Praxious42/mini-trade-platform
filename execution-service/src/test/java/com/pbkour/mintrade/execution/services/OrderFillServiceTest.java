@@ -59,7 +59,7 @@ class OrderFillServiceTest {
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
             .type(Type.MARKET)
-            .quantity(10L)
+            .quantity(new BigDecimal("10"))
             .build();
 
         OrdersCreated payload = OrdersCreated.builder()
@@ -68,7 +68,7 @@ class OrderFillServiceTest {
 
         when(priceGenerator.generatePrice(Symbol.AAPL)).thenReturn(new BigDecimal("180.00"));
 
-        List<Long> knownFills = List.of(6L, 4L);
+        List<BigDecimal> knownFills = List.of(new BigDecimal("6"), new BigDecimal("4"));
         try (MockedStatic<ExecutionDecider> mock = Mockito.mockStatic(ExecutionDecider.class)) {
             mock.when(ExecutionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.ACCEPTED);
             mock.when(() -> ExecutionDecider.getPartialFills(order.getQuantity())).thenReturn(knownFills);
@@ -81,7 +81,7 @@ class OrderFillServiceTest {
         assertEquals(knownFills.size(), capturedFills.size());
         for (int i = 0; i < capturedFills.size(); i++) {
             assertEquals(order.getOrderId(), capturedFills.get(i).getOrderId());
-            assertEquals(knownFills.get(i), capturedFills.get(i).getQuantity());
+            assertEquals(0, knownFills.get(i).compareTo(capturedFills.get(i).getQuantity()));
             assertEquals(0, capturedFills.get(i).getPrice().compareTo(new BigDecimal("180.00")));
         }
 
@@ -97,18 +97,16 @@ class OrderFillServiceTest {
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
             .type(Type.MARKET)
-            .quantity(10L)
+            .quantity(new BigDecimal("10"))
             .build();
 
         OrdersCreated payload = OrdersCreated.builder()
             .order(order)
             .build();
 
-        // mock static decision to REJECTED
         try (MockedStatic<ExecutionDecider> mock = Mockito.mockStatic(ExecutionDecider.class)) {
             mock.when(ExecutionDecider::generateExecutionDecision).thenReturn(ExecutionDecision.REJECTED);
 
-            // make mapper.serialize return some JSON
             when(mapper.writeValueAsString(any(OrdersRejected.class))).thenReturn("{\"orderId\":\"x\"}");
 
             orderFillService.fillOrder(payload);
@@ -127,7 +125,7 @@ class OrderFillServiceTest {
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
             .type(Type.LIMIT)
-            .quantity(5L)
+            .quantity(new BigDecimal("5"))
             .limitPrice(new BigDecimal("150.00"))
             .build();
 
@@ -149,4 +147,3 @@ class OrderFillServiceTest {
         verify(kafkaTemplate, never()).send(anyString(), anyString(), anyString());
     }
 }
-

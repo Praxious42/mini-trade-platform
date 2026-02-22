@@ -19,7 +19,7 @@ public class Order {
     private Symbol symbol;
     private Side side;
     private Type type;
-    private Long quantity;
+    private BigDecimal quantity;
     private BigDecimal limitPrice;
     private Instant createdAt;
     private Instant updatedAt;

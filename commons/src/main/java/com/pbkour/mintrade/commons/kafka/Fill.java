@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Fill {
     private UUID fillId;
-    private long quantity;
+    private BigDecimal quantity;
     private BigDecimal price;
     private Instant timestamp;
 }
