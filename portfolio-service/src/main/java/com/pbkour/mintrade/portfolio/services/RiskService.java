@@ -35,14 +35,24 @@ public class RiskService {
         AccountLimitEntity accountLimit = accountLimitsRepository.findById(accountId)
             .orElseThrow(() -> new RiskCheckFailedException("account limit not found"));
         BigDecimal maxNotional = accountLimit.getMaxNotional();
-        BigDecimal marginRate = accountLimit.getMarginRateFx();
-        BigDecimal requiredMargin = maxNotional.multiply(marginRate);
 
+        BigDecimal marginRate = accountLimit.getMarginRateFx();
         Map<Symbol, PositionEntity> positions = positionsRepository.findByIdAccountId(accountId).stream()
             .collect(Collectors.toMap(o -> o.getId().getSymbol(), o -> o));
 
+        BigDecimal orderNotional = quantity.abs().multiply(priceGenerator.generatePrice(symbol));
+
+        if (orderNotional.compareTo(maxNotional) > 0) {
+            throw new RiskCheckFailedException("Risk check failed: order notional " + orderNotional + " exceeds max notional " + maxNotional);
+        }
+
+        BigDecimal requiredMargin = maxNotional.multiply(marginRate);
+
         BigDecimal usedMargin = positions.values().stream()
-            .map(positionEntity -> positionEntity.getNetQty().abs().multiply(priceGenerator.generatePrice(symbol)))
+            .map(positionEntity -> {
+                Symbol posSymbol = positionEntity.getId().getSymbol();
+                return positionEntity.getNetQty().abs().multiply(priceGenerator.generatePrice(posSymbol));
+            })
             .reduce(BigDecimal.ZERO, BigDecimal::add)
             .multiply(marginRate);
 
@@ -54,7 +64,7 @@ public class RiskService {
 
         BigDecimal maxPosPerSymbol = accountLimit.getMaxPosPerSymbol();
         PositionEntity position = positions.get(symbol);
-        BigDecimal netQty = position != null ? position.getNetQty().add(quantity) : BigDecimal.ZERO;
+        BigDecimal netQty = position != null ? position.getNetQty().add(quantity) : quantity;
 
         if (netQty.abs().compareTo(maxPosPerSymbol) > 0) {
             throw new RiskCheckFailedException("Risk check failed: net quantity " + netQty + " exceeds max position per symbol " + maxPosPerSymbol);
