@@ -1,15 +1,3 @@
-DAY 7 — Portfolio-service: consume orders.filled and apply to positions
-Goal: Update positions transactionally.
-Checklist:
-- Kafka consumer for orders.filled
-- Upsert (accountId, symbol) position and recompute avg price
-- Persist processed_events for idempotency
-Acceptance:
-- Duplicate event does not double-apply (tested)
-
-
----
-
 DAY 8 — Risk engine: margin + position limits
 Goal: Implement risk checks used pre-trade.
 Checklist:
