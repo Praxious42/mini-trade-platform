@@ -21,6 +21,8 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.UUID;
 
+import static java.util.Optional.ofNullable;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -77,7 +79,7 @@ public class PortfolioService {
         try {
             PositionEntity.PositionId pid = new PositionEntity.PositionId(payload.getAccountId(), payload.getSymbol());
             PositionEntity oldPosition = positionsRepository.findById(pid).orElse(null);
-            Side side = payload.getSide();
+            Side side = ofNullable(payload.getSide()).orElseThrow(() -> new PortfolioServiceException("Side is required in OrdersFilled eventId=" + payload.getEventId()));
 
             NewPosition newPosition;
             if (side.equals(Side.BUY)) {
@@ -141,14 +143,15 @@ public class PortfolioService {
         if (oldPosition == null || oldPosition.getNetQty().compareTo(BigDecimal.ZERO) <= 0) {
             return new NewPosition(newQuantity, newPrice);
         } else {
-            //calculate the quantities
+            //new_avg = (old_qty * old_avg + fill_qty * fill_price) / (old_qty + fill_qty)
             BigDecimal oldQuantity = oldPosition.getNetQty();
             BigDecimal oldAvgPrice = oldPosition.getAvgPrice();
-            BigDecimal newTotalQuantity = oldQuantity.add(newQuantity);
-
-            //calculate the prices
             BigDecimal oldPrice = oldQuantity.multiply(oldAvgPrice);
-            BigDecimal sumPrice = oldPrice.add(newPrice);
+
+            BigDecimal newValue = newQuantity.multiply(newPrice);
+            BigDecimal sumPrice = oldPrice.add(newValue);
+
+            BigDecimal newTotalQuantity = oldQuantity.add(newQuantity);
             BigDecimal newAvgPrice = sumPrice.divide(newTotalQuantity, 2, RoundingMode.HALF_UP);
 
             return new NewPosition(newTotalQuantity, newAvgPrice);
