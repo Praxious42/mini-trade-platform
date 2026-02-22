@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +54,7 @@ class OrderServiceGrpcFallbackTest {
             .thenReturn(RiskCheckResponse.newBuilder().setAllowed(false).setReason("test-deny").build());
 
         assertThrows(OrderService.OrderRejectedException.class, () -> orderService.createOrder(sampleOrder));
+        verify(rejectedOrderService).persistRejectedOrder(any(Order.class));
     }
 
     @Test
@@ -61,6 +63,7 @@ class OrderServiceGrpcFallbackTest {
             .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE));
 
         assertThrows(OrderService.OrderRejectedException.class, () -> orderService.createOrder(sampleOrder));
+        verify(rejectedOrderService).persistRejectedOrder(any(Order.class));
     }
 
     @Test
@@ -69,5 +72,6 @@ class OrderServiceGrpcFallbackTest {
             .thenThrow(new StatusRuntimeException(Status.DEADLINE_EXCEEDED));
 
         assertThrows(OrderService.OrderRejectedException.class, () -> orderService.createOrder(sampleOrder));
+        verify(rejectedOrderService).persistRejectedOrder(any(Order.class));
     }
 }
