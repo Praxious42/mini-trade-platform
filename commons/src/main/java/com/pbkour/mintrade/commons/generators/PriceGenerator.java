@@ -1,4 +1,4 @@
-package com.pbkour.mintrade.execution.generators;
+package com.pbkour.mintrade.commons.generators;
 
 import com.pbkour.mintrade.commons.orders.Symbol;
 import org.springframework.stereotype.Component;

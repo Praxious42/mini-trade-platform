@@ -26,7 +26,7 @@ class OrderTest {
             assertEquals(com.pbkour.mintrade.commons.orders.Symbol.AAPL, order.getSymbol());
             assertEquals(com.pbkour.mintrade.commons.orders.Side.BUY, order.getSide());
             assertEquals(com.pbkour.mintrade.commons.orders.Type.LIMIT, order.getType());
-            assertEquals(Long.valueOf(100L), order.getQuantity());
+            assertEquals(BigDecimal.valueOf(100L), order.getQuantity());
             assertEquals(new BigDecimal("150.50"), order.getLimitPrice());
 
             // round-trip
