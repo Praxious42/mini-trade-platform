@@ -1,28 +1,3 @@
-DAY 8 — Risk engine: margin + position limits
-Goal: Implement risk checks used pre-trade.
-Checklist:
-- Compute notional = qty * priceHint
-- requiredMargin = notional * marginRate
-- Deny if requiredMargin > availableMargin (equity - usedMargin placeholder)
-- Deny if abs(newNetQty) > maxPositionPerSymbol
-Acceptance:
-- Unit tests cover allow/deny scenarios and edge cases
-
-
----
-
-DAY 8 — gRPC API: define .proto + generate stubs
-Goal: Portfolio exposes CheckOrderRisk over gRPC.
-Checklist:
-- Add .proto in contracts or portfolio module
-- Define CheckOrderRisk request/response (allowed, reason, requiredMargin, availableMargin)
-- Generate Java stubs (protobuf-maven-plugin)
-Acceptance:
-- Portfolio-service starts gRPC server; basic client call works in test
-
-
----
-
 DAY 9 — Order-service: gRPC client to portfolio risk check
 Goal: Pre-trade validation via gRPC.
 Checklist:
