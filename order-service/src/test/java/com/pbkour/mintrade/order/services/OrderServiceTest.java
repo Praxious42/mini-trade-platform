@@ -1,5 +1,7 @@
 package com.pbkour.mintrade.order.services;
 
+import com.pbkour.mintrade.commons.RiskCheckResponse;
+import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.*;
@@ -37,6 +39,9 @@ class OrderServiceTest {
     @Mock
     private ApplicationEventPublisher publisher;
 
+    @Mock
+    private RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -73,6 +78,7 @@ class OrderServiceTest {
             .version(0)
             .build();
 
+        when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed(true).build());
         when(ordersRepository.save(any(OrderEntity.class))).thenReturn(saved);
 
         UUID result = orderService.createOrder(sampleOrder);
