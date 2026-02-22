@@ -1,0 +1,21 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package com.pbkour.mintrade.commons;
+
+message RiskCheckRequest {
+    string accountId = 1;
+    string symbol = 2;
+    string side = 3;
+    string quantity = 4;
+}
+
+message RiskCheckResponse {
+    string allowed = 1;
+    string reason = 2;
+    string requiredMargin = 3;
+    string availableMargin = 4;
+}
+
+service RiskCheckService {
+    rpc checkOrderRisk(RiskCheckRequest) returns (RiskCheckResponse);
+}

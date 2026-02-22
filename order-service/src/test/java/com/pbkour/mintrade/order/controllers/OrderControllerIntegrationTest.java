@@ -2,6 +2,8 @@ package com.pbkour.mintrade.order.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.RiskCheckResponse;
+import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
@@ -9,7 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -21,6 +25,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,12 +42,19 @@ class OrderControllerIntegrationTest {
     @Autowired
     private OrdersRepository ordersRepository;
 
+    // provide a mocked gRPC stub to satisfy OrderService dependency during integration test
+    @MockitoBean
+    private RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
         ordersRepository.deleteAll();
+
+        // stub risk check to allow orders
+        when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed("true").build());
     }
 
     @Test
@@ -56,7 +69,8 @@ class OrderControllerIntegrationTest {
         JsonNode node = mapper.readTree(json);
         UUID accountId = UUID.fromString(node.get("accountId").asText());
 
-        List<OrderEntity> entities = ordersRepository.findByAccountId(accountId, null).getContent();
+        // use a real PageRequest to query the repository
+        List<OrderEntity> entities = ordersRepository.findByAccountId(accountId, PageRequest.of(0, 10)).getContent();
         assertThat(entities).isNotNull().hasSizeGreaterThanOrEqualTo(1);
 
         OrderEntity created = entities.stream()
@@ -77,4 +91,3 @@ class OrderControllerIntegrationTest {
         assertThat(fetched.get("quantity").asLong()).isEqualTo(node.get("quantity").asLong());
     }
 }
-

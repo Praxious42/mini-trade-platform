@@ -1,6 +1,8 @@
 package com.pbkour.mintrade.portfolio.services;
 
 import com.pbkour.mintrade.commons.generators.PriceGenerator;
+import com.pbkour.mintrade.commons.orders.RejectionReason;
+import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.portfolio.entities.AccountEntity;
 import com.pbkour.mintrade.portfolio.entities.AccountLimitEntity;
@@ -22,8 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,8 +53,9 @@ class RiskServiceTest {
     void accountNotFound_throwsRiskCheckFailed() {
         when(accountsRepository.findById(accountId)).thenReturn(Optional.empty());
 
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ONE));
+        // account lookup throws
+        assertThrows(RiskCheckFailedException.class,
+            () -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ONE, Side.BUY));
     }
 
     @Test
@@ -67,8 +69,9 @@ class RiskServiceTest {
         when(accountsRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(accountLimitsRepository.findById(accountId)).thenReturn(Optional.empty());
 
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ONE));
+        // missing account limits throws
+        assertThrows(RiskCheckFailedException.class,
+            () -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ONE, Side.BUY));
     }
 
     @Test
@@ -106,8 +109,9 @@ class RiskServiceTest {
         // requiredMargin = maxNotional * marginRate = 1000 * 0.1 = 100
         // usedMargin = sum(|5| * 10) * 0.1 = 50 * 0.1 = 5
         // availableMargin = 100 - 5 = 95 < 100 -> fail
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ZERO));
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ZERO, Side.BUY);
+        assertFalse(result.allowed());
+        assertEquals(RejectionReason.REQUIRED_MARGIN.name(), result.reason());
     }
 
     @Test
@@ -141,8 +145,9 @@ class RiskServiceTest {
         when(priceGenerator.generatePrice(Symbol.EURUSD)).thenReturn(new BigDecimal("100.00"));
 
         // try to add quantity 5 -> new netQty = 13 > maxPosPerSymbol(10)
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("5")));
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("5"), Side.BUY);
+        assertFalse(result.allowed());
+        assertEquals(RejectionReason.POSITION_LIMIT.name(), result.reason());
     }
 
     @Test
@@ -170,7 +175,8 @@ class RiskServiceTest {
         // price needed for order notional calculation
         when(priceGenerator.generatePrice(Symbol.EURUSD)).thenReturn(new BigDecimal("1"));
 
-        assertDoesNotThrow(() -> riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("10")));
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("10"), Side.BUY);
+        assertTrue(result.allowed());
     }
 
     @Test
@@ -198,8 +204,9 @@ class RiskServiceTest {
         // price stub for GBPUSD used when computing order notional
         when(priceGenerator.generatePrice(Symbol.GBPUSD)).thenReturn(new BigDecimal("1"));
 
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.GBPUSD, new BigDecimal("11")));
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.GBPUSD, new BigDecimal("11"), Side.BUY);
+        assertFalse(result.allowed());
+        assertEquals(RejectionReason.POSITION_LIMIT.name(), result.reason());
     }
 
     @Test
@@ -244,7 +251,8 @@ class RiskServiceTest {
         // usedMargin = (|2|*100 + |3|*10) * 0.1 = (200 + 30) * 0.1 = 233 * 0.1 = 23.0
         // requiredMargin = maxNotional * marginRate = 1000 * 0.1 = 100
         // availableMargin = equity - usedMargin = 1000 - 23 = 977 >= 100 -> success
-        assertDoesNotThrow(() -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ZERO));
+        RiskService.RiskCheckResult ok = riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ZERO, Side.BUY);
+        assertTrue(ok.allowed());
 
         // if equity were lower, e.g., 10, available < required and should throw
         AccountEntity poor = AccountEntity.builder()
@@ -254,8 +262,9 @@ class RiskServiceTest {
             .build();
         when(accountsRepository.findById(accountId)).thenReturn(Optional.of(poor));
 
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ZERO));
+        RiskService.RiskCheckResult poorResult = riskService.riskCheck(accountId, Symbol.EURUSD, BigDecimal.ZERO, Side.BUY);
+        assertFalse(poorResult.allowed());
+        assertEquals(RejectionReason.REQUIRED_MARGIN.name(), poorResult.reason());
     }
 
     @Test
@@ -284,8 +293,9 @@ class RiskServiceTest {
         // price 60, quantity 2 => orderNotional = 120 > 100 -> should throw
         when(priceGenerator.generatePrice(Symbol.AAPL)).thenReturn(new BigDecimal("60"));
 
-        assertThrows(RiskService.RiskCheckFailedException.class,
-            () -> riskService.riskCheck(accountId, Symbol.AAPL, new BigDecimal("2")));
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.AAPL, new BigDecimal("2"), Side.BUY);
+        assertFalse(result.allowed());
+        assertEquals(RejectionReason.NOTIONAL_LIMIT.name(), result.reason());
     }
 
     @Test
@@ -314,7 +324,58 @@ class RiskServiceTest {
         // price 50, quantity 2 => orderNotional = 100 == maxNotional -> should not throw
         when(priceGenerator.generatePrice(Symbol.AAPL)).thenReturn(new BigDecimal("50"));
 
-        assertDoesNotThrow(() -> riskService.riskCheck(accountId, Symbol.AAPL, new BigDecimal("2")));
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.AAPL, new BigDecimal("2"), Side.BUY);
+        assertTrue(result.allowed());
+    }
+
+    @Test
+    void sell_moreThanPosition_rejected() {
+        // existing position smaller than sell quantity
+        PositionEntity pos = PositionEntity.builder()
+            .id(new PositionId(accountId, Symbol.EURUSD))
+            .netQty(new BigDecimal("2"))
+            .avgPrice(new BigDecimal("100.00"))
+            .build();
+
+        when(positionsRepository.findByIdAccountId(accountId)).thenReturn(List.of(pos));
+
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("5"), Side.SELL);
+        assertFalse(result.allowed());
+        assertEquals(RejectionReason.INSUFFICIENT_POSITION.name(), result.reason());
+    }
+
+    @Test
+    void sell_withinPosition_allowsRiskCheck() {
+        // existing position larger than sell quantity
+        PositionEntity pos = PositionEntity.builder()
+            .id(new PositionId(accountId, Symbol.EURUSD))
+            .netQty(new BigDecimal("10"))
+            .avgPrice(new BigDecimal("100.00"))
+            .build();
+
+        AccountEntity account = AccountEntity.builder()
+            .id(accountId)
+            .equity(new BigDecimal("100000.00"))
+            .createdAt(Instant.now())
+            .build();
+
+        AccountLimitEntity limit = AccountLimitEntity.builder()
+            .accountId(accountId)
+            .maxNotional(new BigDecimal("100000"))
+            .maxPosPerSymbol(new BigDecimal("100"))
+            .marginRateFx(new BigDecimal("0.1"))
+            .marginRateStock(new BigDecimal("0.1"))
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+
+        when(positionsRepository.findByIdAccountId(accountId)).thenReturn(List.of(pos));
+        when(accountsRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountLimitsRepository.findById(accountId)).thenReturn(Optional.of(limit));
+        when(priceGenerator.generatePrice(Symbol.EURUSD)).thenReturn(new BigDecimal("1"));
+
+        RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("5"), Side.SELL);
+        assertTrue(result.allowed());
     }
 }
 

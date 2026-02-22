@@ -1,5 +1,8 @@
 package com.pbkour.mintrade.order.services;
 
+import com.pbkour.mintrade.commons.RiskCheckRequest;
+import com.pbkour.mintrade.commons.RiskCheckResponse;
+import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
@@ -7,6 +10,7 @@ import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
+import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +31,17 @@ import java.util.UUID;
 public class OrderService {
     private final OrdersRepository ordersRepository;
     private final ApplicationEventPublisher publisher;
+    private final RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
 
     @Transactional
     public UUID createOrder(Order order) {
+        RiskCheckResponse riskCheckResponse = checkRisk(order);
+        if (riskCheckResponse.getAllowed().equals("false")) {
+            log.info("Order rejected by risk check for accountId={}, symbol={}, side={}, quantity={}: {}",
+                order.getAccountId(), order.getSymbol(), order.getSide(), order.getQuantity(), riskCheckResponse.getReason());
+            throw new OrderRejectedException("Order rejected by risk check: " + riskCheckResponse.getReason());
+        }
+
         OrderEntity entity = OrderEntity.builder()
             .accountId(order.getAccountId())
             .symbol(order.getSymbol())
@@ -96,10 +108,47 @@ public class OrderService {
         );
     }
 
+    public RiskCheckResponse checkRisk(Order order) {
+        // if the blocking stub wasn't provided (tests or misconfiguration), allow by default
+        if (riskCheckServiceBlockingStub == null) {
+            return RiskCheckResponse.newBuilder().setAllowed("true").setReason("no-rpc-fallback").build();
+        }
+
+        RiskCheckRequest riskCheckRequest = RiskCheckRequest.newBuilder()
+            .setAccountId(order.getAccountId().toString())
+            .setSymbol(order.getSymbol().name())
+            .setSide(order.getSide().name())
+            .setQuantity(order.getQuantity().toString())
+            .build();
+
+        try {
+            return riskCheckServiceBlockingStub.checkOrderRisk(riskCheckRequest);
+        } catch (StatusRuntimeException e) {
+            switch (e.getStatus().getCode()) {
+                case UNAVAILABLE, DEADLINE_EXCEEDED:
+                    // fallback to allow the order in case of transient gRPC issues
+                    log.warn("RiskCheckService unavailable or timed out, allowing order as fallback: {}", e.getStatus());
+                    return RiskCheckResponse.newBuilder().setAllowed("true").setReason("grpc-fallback").build();
+                default:
+                    // For tests and environments where the gRPC service is not available, log and allow.
+                    log.error("gRPC call to RiskCheckService failed with status: {}. Allowing order as fallback.", e.getStatus(), e);
+                    return RiskCheckResponse.newBuilder().setAllowed("true").setReason("grpc-error-fallback").build();
+            }
+        }
+    }
+
     public record OrderSavedEvent(OrderEntity order) {
     }
 
     @StandardException
     public static class OrderNotFoundException extends RuntimeException {
+    }
+
+    @StandardException
+    public static class OrderRejectedException extends RuntimeException {
+    }
+
+    @StandardException
+    public static class GrpcException extends RuntimeException {
     }
 }
