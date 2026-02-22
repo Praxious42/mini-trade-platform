@@ -2,7 +2,7 @@ package com.pbkour.mintrade.portfolio.config;
 
 import com.pbkour.mintrade.portfolio.services.RiskCheckServiceImpl;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
+import io.grpc.netty.NettyServerBuilder;
 import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +10,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -30,12 +31,13 @@ public class GrpcServerLifecycle implements SmartLifecycle {
     @Override
     public void start() {
         try {
-            server = ServerBuilder.forPort(port)
+            InetSocketAddress address = new InetSocketAddress("0.0.0.0", port);
+            server = NettyServerBuilder.forAddress(address)
                 .addService(riskCheckService)
                 .build()
                 .start();
             running = true;
-            log.info("gRPC server started on port: {}", port);
+            log.info("gRPC server started and bound to {}:{}", address.getAddress().getHostAddress(), port);
         } catch (IOException e) {
             throw new GrpcServerException("Failed to start gRPC server", e);
         }
@@ -82,4 +84,3 @@ public class GrpcServerLifecycle implements SmartLifecycle {
     public static class GrpcServerException extends RuntimeException {
     }
 }
-

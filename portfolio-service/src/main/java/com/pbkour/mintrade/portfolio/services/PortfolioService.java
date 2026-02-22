@@ -86,7 +86,7 @@ public class PortfolioService {
                 log.info("Received OrdersFilled with SIDE=BUY");
                 newPosition = increasePosition(payload, oldPosition);
             } else {
-                log.info("Received OrdersFilled with SIDE=LIMIT");
+                log.info("Received OrdersFilled with SIDE=SELL");
                 newPosition = decreasePosition(payload, oldPosition);
             }
 

@@ -1,6 +1,7 @@
 package com.pbkour.mintrade.order.controllers;
 
 import com.pbkour.mintrade.order.entities.OrderEntity.OrderEntityValidationException;
+import com.pbkour.mintrade.order.services.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,8 +60,8 @@ public class OrderControllerAdvice {
     }
 
     // Map OrderRejectedException (thrown when risk check disallows the order) to 422 Unprocessable Entity
-    @ExceptionHandler(com.pbkour.mintrade.order.services.OrderService.OrderRejectedException.class)
-    public ResponseEntity<Object> handleOrderRejected(com.pbkour.mintrade.order.services.OrderService.OrderRejectedException ex, WebRequest request) {
+    @ExceptionHandler(OrderService.OrderRejectedException.class)
+    public ResponseEntity<Object> handleOrderRejected(OrderService.OrderRejectedException ex, WebRequest request) {
         log.info("Order rejected by business rules: {}", ex.getMessage());
 
         HttpStatus status = HttpStatus.valueOf(422);

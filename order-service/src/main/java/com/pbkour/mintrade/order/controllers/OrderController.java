@@ -27,7 +27,7 @@ public class OrderController {
 
         log.info("Created order with id: {}", orderId);
 
-        return ResponseEntity.ok("Creating resource");
+        return ResponseEntity.ok("Publishing order with id: " + orderId);
     }
 
     @PostMapping("/{id}/cancel")
