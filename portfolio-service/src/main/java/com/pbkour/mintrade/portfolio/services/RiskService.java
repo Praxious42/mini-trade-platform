@@ -43,6 +43,12 @@ public class RiskService {
                     .availableMargin(BigDecimal.ZERO)
                     .build();
             }
+            return RiskCheckResult.builder()
+                .allowed(true)
+                .reason("")
+                .requiredMargin(BigDecimal.ZERO)
+                .availableMargin(BigDecimal.ZERO)
+                .build();
         }
 
         // For simplicity, we only do FX
@@ -58,17 +64,7 @@ public class RiskService {
 
         BigDecimal orderNotional = quantity.abs().multiply(priceGenerator.generatePrice(symbol));
 
-        if (orderNotional.compareTo(maxNotional) > 0) {
-            return RiskCheckResult.builder()
-                .allowed(false)
-                .reason(RejectionReason.NOTIONAL_LIMIT.name())
-                .requiredMargin(BigDecimal.ZERO)
-                .availableMargin(equity)
-                .build();
-        }
-
         BigDecimal requiredMargin = maxNotional.multiply(marginRate);
-
         BigDecimal usedMargin = positions.values().stream()
             .map(positionEntity -> {
                 Symbol posSymbol = positionEntity.getId().getSymbol();
@@ -78,6 +74,15 @@ public class RiskService {
             .multiply(marginRate);
 
         BigDecimal availableMargin = equity.subtract(usedMargin);
+
+        if (orderNotional.compareTo(maxNotional) > 0) {
+            return RiskCheckResult.builder()
+                .allowed(false)
+                .reason(RejectionReason.NOTIONAL_LIMIT.name())
+                .requiredMargin(requiredMargin)
+                .availableMargin(equity)
+                .build();
+        }
 
         if (availableMargin.compareTo(requiredMargin) < 0) {
             return RiskCheckResult.builder()

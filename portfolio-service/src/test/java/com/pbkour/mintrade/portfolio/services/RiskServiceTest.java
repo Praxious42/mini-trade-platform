@@ -352,27 +352,8 @@ class RiskServiceTest {
             .netQty(new BigDecimal("10"))
             .avgPrice(new BigDecimal("100.00"))
             .build();
-
-        AccountEntity account = AccountEntity.builder()
-            .id(accountId)
-            .equity(new BigDecimal("100000.00"))
-            .createdAt(Instant.now())
-            .build();
-
-        AccountLimitEntity limit = AccountLimitEntity.builder()
-            .accountId(accountId)
-            .maxNotional(new BigDecimal("100000"))
-            .maxPosPerSymbol(new BigDecimal("100"))
-            .marginRateFx(new BigDecimal("0.1"))
-            .marginRateStock(new BigDecimal("0.1"))
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .build();
-
+        
         when(positionsRepository.findByIdAccountId(accountId)).thenReturn(List.of(pos));
-        when(accountsRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(accountLimitsRepository.findById(accountId)).thenReturn(Optional.of(limit));
-        when(priceGenerator.generatePrice(Symbol.EURUSD)).thenReturn(new BigDecimal("1"));
 
         RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("5"), Side.SELL);
         assertTrue(result.allowed());

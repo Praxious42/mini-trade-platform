@@ -78,7 +78,7 @@ class OrderServiceTest {
             .version(0)
             .build();
 
-        when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed("true").build());
+        when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed(true).build());
         when(ordersRepository.save(any(OrderEntity.class))).thenReturn(saved);
 
         UUID result = orderService.createOrder(sampleOrder);

@@ -5,6 +5,8 @@ import com.pbkour.mintrade.commons.RiskCheckResponse;
 import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
@@ -51,7 +53,7 @@ public class RiskCheckServiceImpl extends RiskCheckServiceGrpc.RiskCheckServiceI
 
 
             RiskCheckResponse response = RiskCheckResponse.newBuilder()
-                .setAllowed(Boolean.toString(riskCheckResult.allowed()))
+                .setAllowed(riskCheckResult.allowed())
                 .setReason(riskCheckResult.reason())
                 .setRequiredMargin(riskCheckResult.requiredMargin().toString())
                 .setAvailableMargin(riskCheckResult.availableMargin().toString())
@@ -64,7 +66,13 @@ public class RiskCheckServiceImpl extends RiskCheckServiceGrpc.RiskCheckServiceI
             responseObserver.onError(new RiskCheckServiceException(e.getMessage()));
         } catch (RiskCheckServiceException e) {
             log.error("Risk check failed for accountId={}: {}", request.getAccountId(), e.getMessage());
-            responseObserver.onError(e);
+            responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription(e.getMessage())));
+        } catch (RiskCheckFailedException e) {
+            log.error("Risk check failed internally for accountId={}: {}", request.getAccountId(), e.getMessage());
+            responseObserver.onError(new StatusRuntimeException(Status.INTERNAL.withDescription(e.getMessage())));
+        } catch (Exception e) {
+            log.error("Unexpected error during risk check for accountId={}: {}", request.getAccountId(), e.getMessage());
+            responseObserver.onError(new StatusRuntimeException(Status.INTERNAL.withDescription("Unexpected error: " + e.getMessage())));
         }
 
     }

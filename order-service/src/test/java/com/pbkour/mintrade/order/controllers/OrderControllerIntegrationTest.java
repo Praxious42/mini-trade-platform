@@ -54,7 +54,7 @@ class OrderControllerIntegrationTest {
         ordersRepository.deleteAll();
 
         // stub risk check to allow orders
-        when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed("true").build());
+        when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed(true).build());
     }
 
     @Test

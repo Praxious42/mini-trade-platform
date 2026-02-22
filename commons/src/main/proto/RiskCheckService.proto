@@ -10,7 +10,7 @@ message RiskCheckRequest {
 }
 
 message RiskCheckResponse {
-    string allowed = 1;
+    bool allowed = 1;
     string reason = 2;
     string requiredMargin = 3;
     string availableMargin = 4;

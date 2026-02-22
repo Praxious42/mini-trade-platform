@@ -36,7 +36,7 @@ public class OrderService {
     @Transactional
     public UUID createOrder(Order order) {
         RiskCheckResponse riskCheckResponse = checkRisk(order);
-        if (riskCheckResponse.getAllowed().equals("false")) {
+        if (!riskCheckResponse.getAllowed()) {
             log.info("Order rejected by risk check for accountId={}, symbol={}, side={}, quantity={}: {}",
                 order.getAccountId(), order.getSymbol(), order.getSide(), order.getQuantity(), riskCheckResponse.getReason());
             throw new OrderRejectedException("Order rejected by risk check: " + riskCheckResponse.getReason());
@@ -111,7 +111,7 @@ public class OrderService {
     public RiskCheckResponse checkRisk(Order order) {
         // if the blocking stub wasn't provided (tests or misconfiguration), allow by default
         if (riskCheckServiceBlockingStub == null) {
-            return RiskCheckResponse.newBuilder().setAllowed("true").setReason("no-rpc-fallback").build();
+            return RiskCheckResponse.newBuilder().setAllowed(true).setReason("no-rpc-fallback").build();
         }
 
         RiskCheckRequest riskCheckRequest = RiskCheckRequest.newBuilder()
@@ -128,11 +128,10 @@ public class OrderService {
                 case UNAVAILABLE, DEADLINE_EXCEEDED:
                     // fallback to allow the order in case of transient gRPC issues
                     log.warn("RiskCheckService unavailable or timed out, allowing order as fallback: {}", e.getStatus());
-                    return RiskCheckResponse.newBuilder().setAllowed("true").setReason("grpc-fallback").build();
+                    return RiskCheckResponse.newBuilder().setAllowed(false).setReason("grpc-fallback").build();
                 default:
-                    // For tests and environments where the gRPC service is not available, log and allow.
                     log.error("gRPC call to RiskCheckService failed with status: {}. Allowing order as fallback.", e.getStatus(), e);
-                    return RiskCheckResponse.newBuilder().setAllowed("true").setReason("grpc-error-fallback").build();
+                    return RiskCheckResponse.newBuilder().setAllowed(false).setReason("grpc-error-fallback").build();
             }
         }
     }
@@ -146,9 +145,5 @@ public class OrderService {
 
     @StandardException
     public static class OrderRejectedException extends RuntimeException {
-    }
-
-    @StandardException
-    public static class GrpcException extends RuntimeException {
     }
 }
