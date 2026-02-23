@@ -1,5 +1,4 @@
 ﻿#!/bin/sh
-set -eu
 
 # Configurable defaults (can be overridden via environment)
 PGHOST="${PGHOST:-mintrade-order}"
@@ -45,4 +44,3 @@ done
 
 echo "Runner finished."
 exit 0
-

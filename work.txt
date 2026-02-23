@@ -1,14 +1,3 @@
-DAY 9 — End-to-end demo flow (compose)
-Goal: Smooth demo of create -> fill -> portfolio update.
-Checklist:
-- Compose wires service-to-service networking
-- Script or curl examples in README
-Acceptance:
-- One command starts stack; curl shows order FILLED and position updated
-
-
----
-
 DAY 10 — Testcontainers: integration tests per service
 Goal: “Senior” testing story.
 Checklist:

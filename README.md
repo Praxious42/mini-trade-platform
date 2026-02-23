@@ -1,6 +1,6 @@
 # Mini Trade Platform (mini-trade-platform)
 
-A small event-driven trading backend built with **Java 17** and **Spring Boot**, designed to showcase backend skills: microservices, Kafka, PostgreSQL/Hibernate, HTTP + gRPC, CI/CD, Docker, Kubernetes, and strong testing (TDD/BDD style).
+A small event-driven trading backend built with **Java 17** and **Spring Boot**
 
 ## What this project demonstrates
 
@@ -8,7 +8,7 @@ A small event-driven trading backend built with **Java 17** and **Spring Boot**,
 - **Event-driven architecture** with **Apache Kafka** (order lifecycle events)
 - **PostgreSQL + Hibernate** with **Flyway** migrations
 - **HTTP REST** public API + **gRPC** internal service-to-service calls
-- **Reliability patterns**: idempotent consumers, retries/backoff, (optional) DLQ, (optional) outbox
+- **Reliability patterns**: idempotent consumers, retries/backoff
 - **Testing discipline**: unit tests + integration tests via **Testcontainers**, plus BDD-style scenarios
 - **DevOps**: Docker Compose for local, Kubernetes manifests for deployment, GitHub Actions CI
 
@@ -22,7 +22,6 @@ Responsibilities:
 
 - Accept/validate order requests via HTTP
 - Perform **pre-trade risk check** by calling portfolio-service over **gRPC**
-- Persist orders to PostgreSQL
 - Publish order lifecycle events to Kafka
 - Consume fill/reject events to update order state
 
@@ -58,10 +57,9 @@ Responsibilities:
 - Consume `orders.filled` and apply fills to positions transactionally
 - Expose **gRPC** API for risk checks used by order-service
 
-gRPC methods (suggested):
+gRPC methods:
 
 - `CheckOrderRisk(accountId, symbol, side, qty, priceHint, orderType)` -> `allowed, reason, requiredMargin, availableMargin`
-- (Optional) `GetPortfolio(accountId)` for debugging/demo
 
 ## Messaging (Kafka)
 
@@ -89,7 +87,6 @@ Consumers should be idempotent (example approach):
 
 - `orders`: main order state (optimistic locking with `version`)
 - (optional) `fills`: store fill details
-- (optional) `outbox`: transactional outbox for publishing events safely
 
 ### portfolio-service schema (suggested)
 
@@ -120,12 +117,17 @@ docker compose up -d
 
 ```powershell
 # From project root, run one service per terminal
-mvn -pl order spring-boot:run
-mvn -pl execution spring-boot:run
-mvn -pl portfolio spring-boot:run
+# If you run the order-service locally with Maven you may need to point it to the portfolio gRPC host.
+# PowerShell (set env for current session):
+$env:PORTFOLIO_GRPC_HOST = 'localhost'
+mvn -pl order-service spring-boot:run
+
+# Start the other services in separate terminals as usual
+mvn -pl execution-service spring-boot:run
+mvn -pl portfolio-service spring-boot:run
 ```
 
-(Replace module names with your module artifactIds if they differ: `order`, `execution`, `portfolio`.)
+> Note: for a convenient infra setup (Docker Compose with network and init scripts) see `infra/docker/README.md` which contains copy-paste PowerShell commands to start the infra and run the services as containers.
 
 ### Docker Compose — Environment & Ports
 
@@ -176,15 +178,15 @@ Notes:
 Create a market order:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/orders \
+curl -X POST http://localhost:8081/api/v1/orders \
   -H "Content-Type: application/json" \
-  -d '{"accountId":"acc-1","symbol":"EURUSD","side":"BUY","type":"MARKET","quantity":1000}'
+  -d '{"accountId":"3fa85f64-5717-4562-b3fc-2c963f66afa6","symbol":"EURUSD","side":"BUY","type":"MARKET","quantity":1000}'
 ```
 
 Fetch order:
 
 ```bash
-curl http://localhost:8080/api/v1/orders/<orderId>
+curl http://localhost:8081/api/v1/orders/<orderId>
 ```
 
 Expected flow:
@@ -213,6 +215,124 @@ Run integration tests (if separated with failsafe):
 mvn verify
 ```
 
+## Creating orders (step-by-step)
+
+Below are PowerShell-friendly step-by-step instructions to create a BUY order, then a SELL order for the same account using the example payload you provided. The examples assume the order-service HTTP API is available at http://localhost:8081 and that you started the infra and services (see `infra/docker/README.md` for the Docker Compose quick start).
+
+Contract (example payload you've used):
+
+```json
+{
+    "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "symbol": "AAPL",
+    "side": "BUY",
+    "type": "MARKET",
+    "quantity": 1,
+    "limitPrice": 180
+}
+```
+
+Steps:
+
+1) Ensure infra and services are running
+
+- Start infra (from repo root):
+
+```powershell
+# start infra (Kafka, Postgres, init scripts)
+docker compose -f .\infra\docker\docker-compose.yml up -d
+```
+
+- Start services (either with Maven during development or via the services compose):
+
+```powershell
+# Run locally with Maven (dev)
+mvn -pl order-service spring-boot:run
+# or start all services as containers
+docker compose -f .\infra\docker\docker-compose.services.yml up -d
+```
+
+2) Create a BUY order (PowerShell-friendly curl)
+
+- POST the order (PowerShell - recommended):
+
+```powershell
+# PowerShell (Invoke-RestMethod) - inline JSON (recommended)
+$buyPayload = @'
+{
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "symbol": "AAPL",
+  "side": "BUY",
+  "type": "MARKET",
+  "quantity": 1,
+  "limitPrice": 180
+}
+'@
+
+Invoke-RestMethod -Method Post -Uri 'http://localhost:8081/api/v1/orders' -ContentType 'application/json' -Body $buyPayload
+```
+
+- Or using curl.exe (inline JSON):
+
+```powershell
+# curl.exe inline (escape double-quotes)
+curl.exe -X POST "http://localhost:8081/api/v1/orders" -H "Content-Type: application/json" -d "{\"accountId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"symbol\":\"AAPL\",\"side\":\"BUY\",\"type\":\"MARKET\",\"quantity\":1,\"limitPrice\":180}"
+```
+
+Expected response: 200 Created with a JSON body containing at least an `orderId` and the submitted fields. Example response (illustrative):
+
+```
+Publishing order with id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+```
+
+3) Poll the order status
+
+- Use the `orderId` from the response to fetch the order:
+
+```powershell
+curl http://localhost:8081/api/v1/orders/<orderId>
+```
+
+- The system is event-driven: after the order is published to Kafka, the `execution-service` may simulate a fill and the `portfolio-service` will apply it. Expect the order `status` to transition from `ACCEPTED` -> `FILLED` (or `PARTIALLY_FILLED`) once the execution completes.
+
+4) Create a SELL order for the same account
+
+- POST the SELL order (PowerShell - recommended):
+
+```powershell
+# PowerShell (Invoke-RestMethod) - inline JSON (recommended)
+$sellPayload = @'
+{
+  "accountId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "symbol": "AAPL",
+  "side": "SELL",
+  "type": "MARKET",
+  "quantity": 1,
+  "limitPrice": 180
+}
+'@
+
+Invoke-RestMethod -Method Post -Uri 'http://localhost:8081/api/v1/orders' -ContentType 'application/json' -Body $sellPayload
+```
+
+- Or using curl.exe (inline JSON):
+
+```powershell
+curl.exe -X POST "http://localhost:8081/api/v1/orders" -H "Content-Type: application/json" -d "{\"accountId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"symbol\":\"AAPL\",\"side\":\"SELL\",\"type\":\"MARKET\",\"quantity\":1,\"limitPrice\":180}"
+```
+
+- Fetch the order by `orderId` as shown above and observe its lifecycle.
+
+Notes and tips
+
+- Replace the `accountId` with a valid account known to `portfolio-service` if your environment uses seeded accounts.
+- If you get connection errors to the gRPC risk-check service, ensure `portfolio-service` is running and reachable (see `infra/docker/README.md` troubleshooting). The service may reject orders if the risk check fails.
+- For quick debugging, tail logs for `order-service`, `execution-service`, and `portfolio-service` to follow the event flow:
+
+```powershell
+docker compose -f .\infra\docker\docker-compose.services.yml logs -f order-service execution-service portfolio-service
+```
+
 ## Observability
 
 - Spring Boot Actuator enabled on all services:
@@ -221,7 +341,7 @@ mvn verify
     - (optional) `/actuator/prometheus`
 - Structured JSON logs + correlation IDs propagated via HTTP headers and Kafka message headers.
 
-## CI/CD
+## CI/CD WIP
 
 GitHub Actions workflow (suggested):
 
@@ -240,20 +360,19 @@ A minimal `k8s/` directory provides manifests for:
 
 (For local dev, Kafka/Postgres remain via Docker Compose unless you add Helm charts.)
 
-## Project structure (suggested)
+## Project structure
 
-- `contracts/` — shared event DTOs and (optional) protobuf definitions
+- `commons/` — shared event DTOs and (optional) protobuf definitions
 - `order-service/`
 - `execution-service/`
 - `portfolio-service/`
-- `docker-compose.yml`
+- `infra/`
 - `k8s/`
 
 ## Tradeoffs & design notes
 
 - Events are JSON for simplicity; Avro/Schema Registry would be a natural extension.
 - Exactly-once delivery is not assumed; consumers are idempotent instead.
-- (Optional) transactional outbox in order-service to avoid dual-write issues.
 - Execution is simulated; in a real system this would connect to market/exchange gateways.
 
 ## License

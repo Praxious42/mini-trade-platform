@@ -1,0 +1,65 @@
+services:
+    order-service:
+        build:
+            context: ../..
+            dockerfile: order-service/Dockerfile
+        image: mintrade/order-service:dev
+        container_name: order-service
+        environment:
+            KAFKA_BOOTSTRAP_SERVERS: broker:9092
+            DB_HOST: mintrade-order
+            DB_PORT: 5432
+            DB_NAME: mintrade-order
+            DB_USER: postgres
+            DB_PASSWORD: password
+            PORT: 8081
+            PORTFOLIO_GRPC_HOST: portfolio-service
+            PORTFOLIO_GRPC_PORT: 8085
+        ports:
+            - "8081:8081"
+        networks:
+            - mintrade-net
+
+    execution-service:
+        build:
+            context: ../..
+            dockerfile: execution-service/Dockerfile
+        image: mintrade/execution-service:dev
+        container_name: execution-service
+        environment:
+            KAFKA_BOOTSTRAP_SERVERS: broker:9092
+            DB_HOST: mintrade-order
+            DB_PORT: 5432
+            DB_USER: postgres
+            DB_PASSWORD: password
+            PORT: 8082
+        ports:
+            - "8082:8082"
+        networks:
+            - mintrade-net
+
+    portfolio-service:
+        build:
+            context: ../..
+            dockerfile: portfolio-service/Dockerfile
+        image: mintrade/portfolio-service:dev
+        container_name: portfolio-service
+        environment:
+            KAFKA_BOOTSTRAP_SERVERS: broker:9092
+            DB_HOST: mintrade-portfolio
+            DB_PORT: 5432
+            DB_NAME: mintrade-portfolio
+            DB_USER: postgres
+            DB_PASSWORD: password
+            PORT: 8083
+            PORTFOLIO_GRPC_PORT: 8085
+        ports:
+            - "8083:8083"
+            - "8085:8085"
+        networks:
+            - mintrade-net
+
+networks:
+    mintrade-net:
+        external:
+            name: docker_mintrade-net

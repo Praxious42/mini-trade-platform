@@ -16,6 +16,9 @@ public class ExecutionDecider {
     private static final double DEFAULT_PARTIAL_FILL_RATE = 0.5;
 
     public static List<BigDecimal> getPartialFills(BigDecimal quantity) {
+        if (quantity.equals(BigDecimal.ONE)) {
+            return List.of(quantity);
+        }
         return getPartialFills(quantity, DEFAULT_PARTIAL_FILL_RATE);
     }
 

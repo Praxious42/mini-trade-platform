@@ -1,7 +1,7 @@
 ﻿BEGIN;
 
 INSERT INTO accounts (id, equity)
-SELECT '3fa85f64-5717-4562-b3fc-2c963f66afa6'::uuid, 0
+SELECT '3fa85f64-5717-4562-b3fc-2c963f66afa6'::uuid, 1000000
 WHERE NOT EXISTS (
     SELECT 1 FROM accounts WHERE id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'::uuid
 );
