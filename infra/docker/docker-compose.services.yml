@@ -33,8 +33,6 @@ services:
             DB_USER: postgres
             DB_PASSWORD: password
             PORT: 8082
-            PORTFOLIO_GRPC_HOST: portfolio-service
-            PORTFOLIO_GRPC_PORT: 8085
         ports:
             - "8082:8082"
         networks:

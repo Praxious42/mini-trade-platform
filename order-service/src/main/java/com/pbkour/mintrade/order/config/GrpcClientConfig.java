@@ -14,10 +14,10 @@ public class GrpcClientConfig {
 
     private static final Logger log = LoggerFactory.getLogger(GrpcClientConfig.class);
 
-    @Value("${PORTFOLIO_GRPC_HOST:${portfolio.grpc.host:portfolio-service}}")
+    @Value("${portfolio.grpc.host}")
     private String host;
 
-    @Value("${PORTFOLIO_GRPC_PORT:${portfolio.grpc.port:8085}}")
+    @Value("${portfolio.grpc.port}")
     private int port;
 
     @Bean(destroyMethod = "shutdown")

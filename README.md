@@ -127,8 +127,6 @@ mvn -pl execution-service spring-boot:run
 mvn -pl portfolio-service spring-boot:run
 ```
 
-(Replace module names with your module artifactIds if they differ: `order`, `execution`, `portfolio`.)
-
 > Note: for a convenient infra setup (Docker Compose with network and init scripts) see `infra/docker/README.md` which contains copy-paste PowerShell commands to start the infra and run the services as containers.
 
 ### Docker Compose — Environment & Ports
@@ -249,7 +247,7 @@ docker compose -f .\infra\docker\docker-compose.yml up -d
 
 ```powershell
 # Run locally with Maven (dev)
-mvn -pl order spring-boot:run
+mvn -pl order-service spring-boot:run
 # or start all services as containers
 docker compose -f .\infra\docker\docker-compose.services.yml up -d
 ```
