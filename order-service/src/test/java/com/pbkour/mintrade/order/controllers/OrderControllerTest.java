@@ -70,7 +70,7 @@ class OrderControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Creating resource")));
+                .andExpect(content().string(containsString("Publishing order with id: 11111111-1111-1111-1111-111111111111")));
 
             verify(orderService, times(1)).createOrder(orderCaptor.capture());
             Order captured = orderCaptor.getValue();

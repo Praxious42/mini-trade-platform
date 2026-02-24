@@ -46,6 +46,13 @@
             <version>4.11.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.pbkour.mintrade</groupId>
+            <artifactId>infra</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

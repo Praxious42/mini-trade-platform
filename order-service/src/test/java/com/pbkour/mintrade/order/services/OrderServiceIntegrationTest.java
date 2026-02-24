@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 
 import java.math.BigDecimal;
@@ -27,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest("spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration")
+@SpringBootTest(properties = {"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"})
+@Import(OrderServiceIntegrationTest.TestConfig.class)
 class OrderServiceIntegrationTest {
 
     @Autowired
@@ -36,9 +38,16 @@ class OrderServiceIntegrationTest {
     @Autowired
     private OrdersRepository ordersRepository;
 
+    // the mock created in TestConfig will be injected here (it's marked @Primary)
+    @Autowired
+    private RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
+
     @BeforeEach
     void clean() {
         ordersRepository.deleteAll();
+        // preserve the previous behavior: always reject
+        when(riskCheckServiceBlockingStub.checkOrderRisk(any()))
+            .thenReturn(RiskCheckResponse.newBuilder().setAllowed(false).setReason("test-rejected").build());
     }
 
     @Test
@@ -67,10 +76,8 @@ class OrderServiceIntegrationTest {
     static class TestConfig {
         @Bean
         @Primary
-        public RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub() {
-            RiskCheckServiceGrpc.RiskCheckServiceBlockingStub stub = Mockito.mock(RiskCheckServiceGrpc.RiskCheckServiceBlockingStub.class);
-            when(stub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed(false).setReason("test-rejected").build());
-            return stub;
+        public RiskCheckServiceGrpc.RiskCheckServiceBlockingStub testRiskCheckServiceBlockingStub() {
+            return Mockito.mock(RiskCheckServiceGrpc.RiskCheckServiceBlockingStub.class);
         }
     }
 }
