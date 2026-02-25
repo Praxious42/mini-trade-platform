@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import os
+import subprocess
 import sys
 import time
-import shlex
-import subprocess
 from pathlib import Path
 
 PGHOST = os.getenv("PGHOST", "mintrade-order")
@@ -17,6 +16,7 @@ env["PGPASSWORD"] = PGPASSWORD
 
 print(f"Waiting for Postgres at {PGHOST}...")
 
+
 def can_connect_with_psql():
     try:
         # Try a lightweight query to confirm server is accepting connections
@@ -29,6 +29,7 @@ def can_connect_with_psql():
     except FileNotFoundError:
         print("psql not found in container PATH; ensure postgresql client is installed", file=sys.stderr)
         sys.exit(1)
+
 
 while not can_connect_with_psql():
     time.sleep(1)
@@ -51,10 +52,11 @@ for filepath in files:
     suffix = filename.split('.')[-1] if '.' in filename else ''
     if suffix == 'sql':
         print(f"-> psql -f {filename}")
-        subprocess.run(["psql", "-v", "ON_ERROR_STOP=1", "-h", PGHOST, "-U", PGUSER, "-d", PGDATABASE, "-f", str(filepath)], check=True, env=env)
+        subprocess.run(
+            ["psql", "-v", "ON_ERROR_STOP=1", "-h", PGHOST, "-U", PGUSER, "-d", PGDATABASE, "-f", str(filepath)],
+            check=True, env=env)
     else:
         print(f"-> skipping {filename} (unknown extension)")
 
 print("Runner finished.")
 sys.exit(0)
-

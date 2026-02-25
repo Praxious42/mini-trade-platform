@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -77,7 +78,7 @@ class OrderContainerIntegrationTest {
         ResponseEntity<String> orderResponse = orderController.createOrder(order);
 
         ResponseEntity<List<Order>> listResponseEntity = orderController.listOrdersByAccount(UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"), 0, 1);
-        assert listResponseEntity.getBody() != null;
+        assertNotNull(listResponseEntity.getBody());
         Order order1 = listResponseEntity.getBody().stream().findFirst().orElseThrow(IllegalStateException::new);
 
         assertEquals(order.getAccountId(), order1.getAccountId());

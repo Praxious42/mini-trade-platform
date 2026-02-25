@@ -90,13 +90,4 @@ class OrderControllerIntegrationTest {
         assertThat(fetched.get("symbol").asText()).isEqualTo(node.get("symbol").asText());
         assertThat(fetched.get("quantity").asLong()).isEqualTo(node.get("quantity").asLong());
     }
-
-//    @TestConfiguration
-//    static class TestConfig {
-//        @Bean
-//        @Primary
-//        public RiskCheckServiceGrpc.RiskCheckServiceBlockingStub testRiskCheckServiceBlockingStub() {
-//            return Mockito.mock(RiskCheckServiceGrpc.RiskCheckServiceBlockingStub.class);
-//        }
-//    }
 }
