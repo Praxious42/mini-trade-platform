@@ -1,15 +1,3 @@
-DAY 10 — Testcontainers: integration tests per service
-Goal: “Senior” testing story.
-Checklist:
-- Order-service: Postgres + Kafka Testcontainers
-- Portfolio-service: Postgres + Kafka Testcontainers
-- Execution-service: Kafka Testcontainer (optional)
-Acceptance:
-- `mvn verify` runs integration tests locally
-
-
----
-
 DAY 10 — BDD-style scenarios (Cucumber or Given/When/Then JUnit)
 Goal: Show TDD/BDD mindset.
 Checklist:
