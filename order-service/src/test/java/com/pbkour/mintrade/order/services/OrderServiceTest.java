@@ -163,12 +163,12 @@ class OrderServiceTest {
             .version(0)
             .build();
 
-        when(ordersRepository.getReferenceById(id)).thenReturn(entity);
+        when(ordersRepository.findById(id)).thenReturn(Optional.of(entity));
         when(ordersRepository.save(any(OrderEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         orderService.cancelOrder(id);
 
-        verify(ordersRepository, times(1)).getReferenceById(id);
+        verify(ordersRepository, times(1)).findById(id);
         verify(ordersRepository, times(1)).save(entityCaptor.capture());
         OrderEntity saved = entityCaptor.getValue();
         assertEquals(id, saved.getId());

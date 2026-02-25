@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -77,8 +76,9 @@ public class OrderService {
         return ordersRepository.findByAccountId(accountId, pageRequest).getContent().stream().map(OrderEntity::mapToOrder).toList();
     }
 
+    @Transactional
     public void cancelOrder(UUID id) {
-        Optional.of(ordersRepository.getReferenceById(id))
+        ordersRepository.findById(id)
             .ifPresent(order -> {
                 order.setStatus(Status.CANCELLED);
                 ordersRepository.save(order);
