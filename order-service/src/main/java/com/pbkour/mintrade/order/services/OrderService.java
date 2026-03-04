@@ -8,6 +8,7 @@ import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
+import com.pbkour.mintrade.commons.responses.OrderResponse;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import io.grpc.StatusRuntimeException;
@@ -34,7 +35,7 @@ public class OrderService {
     private final RejectedOrderService rejectedOrderService;
 
     @Transactional
-    public UUID createOrder(Order order) {
+    public OrderResponse createOrder(Order order) {
         RiskCheckResponse riskCheckResponse = checkRisk(order);
         if (!riskCheckResponse.getAllowed()) {
             log.info("Order rejected by risk check for accountId={}, symbol={}, side={}, quantity={}: {}",
@@ -59,21 +60,21 @@ public class OrderService {
 
         publisher.publishEvent(new OrderSavedEvent(savedOrder));
 
-        return savedOrder.getId();
+        return OrderEntity.mapToOrderResponse(savedOrder);
     }
 
 
-    public Order getOrder(UUID id) {
+    public OrderResponse getOrder(UUID id) {
         return ordersRepository.findById(id)
-            .map(OrderEntity::mapToOrder)
+            .map(OrderEntity::mapToOrderResponse)
             .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
     }
 
-    public List<Order> getAccountOrders(UUID accountId, int page, int size) {
+    public List<OrderResponse> getAccountOrders(UUID accountId, int page, int size) {
         Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
         PageRequest pageRequest = PageRequest.of(page, size, sort);
 
-        return ordersRepository.findByAccountId(accountId, pageRequest).getContent().stream().map(OrderEntity::mapToOrder).toList();
+        return ordersRepository.findByAccountId(accountId, pageRequest).getContent().stream().map(OrderEntity::mapToOrderResponse).toList();
     }
 
     @Transactional

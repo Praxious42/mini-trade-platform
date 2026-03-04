@@ -1,15 +1,3 @@
-DAY 10 — BDD-style scenarios (Cucumber or Given/When/Then JUnit)
-Goal: Show TDD/BDD mindset.
-Checklist:
-- Scenario 1: market order accepted and filled
-- Scenario 2: order rejected due to margin
-- Scenario 3: duplicate fill event idempotent
-Acceptance:
-- Scenarios run in CI and pass deterministically
-
-
----
-
 DAY 11 — Reliability: retries, DLQ, idempotency hardening
 Goal: Production-ish behavior for Kafka flows.
 Checklist:

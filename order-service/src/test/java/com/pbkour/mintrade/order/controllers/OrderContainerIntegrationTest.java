@@ -6,6 +6,7 @@ import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
+import com.pbkour.mintrade.commons.responses.OrderResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
@@ -75,11 +76,11 @@ class OrderContainerIntegrationTest {
 
         when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed(true).build());
 
-        ResponseEntity<String> orderResponse = orderController.createOrder(order);
+        ResponseEntity<OrderResponse> createOrderResponse = orderController.createOrder(order);
 
-        ResponseEntity<List<Order>> listResponseEntity = orderController.listOrdersByAccount(UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"), 0, 1);
+        ResponseEntity<List<OrderResponse>> listResponseEntity = orderController.listOrdersByAccount(UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"), 0, 1);
         assertNotNull(listResponseEntity.getBody());
-        Order order1 = listResponseEntity.getBody().stream().findFirst().orElseThrow(IllegalStateException::new);
+        OrderResponse order1 = listResponseEntity.getBody().stream().findFirst().orElseThrow(IllegalStateException::new);
 
         assertEquals(order.getAccountId(), order1.getAccountId());
         assertEquals(order.getSymbol(), order1.getSymbol());
@@ -88,11 +89,7 @@ class OrderContainerIntegrationTest {
         assertEquals(0, order1.getQuantity().compareTo(order.getQuantity()));
         assertEquals(0, order.getLimitPrice().compareTo(order1.getLimitPrice()));
 
-        // orderResponse.getBody() ends with UUID I want that part of the string
-        String substring = orderResponse.getBody().substring(orderResponse.getBody().lastIndexOf(" ") + 1);
-        UUID uuid = UUID.fromString(substring);
-
-        ResponseEntity<Order> order2 = orderController.getOrder(uuid);
+        ResponseEntity<OrderResponse> order2 = orderController.getOrder(createOrderResponse.getBody().getOrderId());
 
         assert order2.getBody() != null;
         assertEquals(order.getAccountId(), order2.getBody().getAccountId());
@@ -102,7 +99,7 @@ class OrderContainerIntegrationTest {
         assertEquals(0, order2.getBody().getQuantity().compareTo(order.getQuantity()));
         assertEquals(0, order.getLimitPrice().compareTo(order2.getBody().getLimitPrice()));
 
-        ResponseEntity<String> cancelResponse = orderController.cancelOrder(uuid);
+        ResponseEntity<String> cancelResponse = orderController.cancelOrder(createOrderResponse.getBody().getOrderId());
         assertEquals(200, cancelResponse.getStatusCode().value());
     }
 }

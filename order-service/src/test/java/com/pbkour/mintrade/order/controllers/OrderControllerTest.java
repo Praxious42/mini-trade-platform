@@ -6,6 +6,7 @@ import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
+import com.pbkour.mintrade.commons.responses.OrderResponse;
 import com.pbkour.mintrade.order.entities.OrderEntity.OrderEntityValidationException;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +61,8 @@ class OrderControllerTest {
     @Test
     void createOrder_delegatesToService_andReturnsOk() throws Exception {
         UUID returnedId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        when(orderService.createOrder(any(Order.class))).thenReturn(returnedId);
+        OrderResponse orderResponse = OrderResponse.builder().orderId(returnedId).build();
+        when(orderService.createOrder(any(Order.class))).thenReturn(orderResponse);
 
         try (InputStream in = getClass().getResourceAsStream("/order-request.json")) {
             assertNotNull(in);
@@ -70,7 +72,7 @@ class OrderControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Publishing order with id: 11111111-1111-1111-1111-111111111111")));
+                .andExpect(content().string(containsString("11111111-1111-1111-1111-111111111111")));
 
             verify(orderService, times(1)).createOrder(orderCaptor.capture());
             Order captured = orderCaptor.getValue();
@@ -128,7 +130,7 @@ class OrderControllerTest {
     @Test
     void getOrder_returnsOrderFromService() throws Exception {
         UUID id = UUID.fromString("44444444-4444-4444-4444-444444444444");
-        Order returned = Order.builder()
+        OrderResponse returned = OrderResponse.builder()
             .accountId(UUID.fromString("22222222-2222-2222-2222-222222222222"))
             .symbol(Symbol.AAPL)
             .side(Side.BUY)
@@ -149,7 +151,7 @@ class OrderControllerTest {
     @Test
     void listOrdersByAccount_returnsListFromService() throws Exception {
         UUID accountId = UUID.fromString("22222222-2222-2222-2222-222222222222");
-        Order o1 = Order.builder()
+        OrderResponse o1 = OrderResponse.builder()
             .accountId(accountId)
             .symbol(Symbol.AAPL)
             .side(Side.BUY)

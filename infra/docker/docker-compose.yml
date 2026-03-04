@@ -122,4 +122,4 @@ volumes:
 networks:
     mintrade-net:
         driver: bridge
-
+        name: docker_mintrade-net

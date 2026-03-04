@@ -5,6 +5,7 @@ import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Status;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
+import com.pbkour.mintrade.commons.responses.OrderResponse;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,6 +53,21 @@ public class OrderEntity {
     @Version
     @Column(name = "version", nullable = false)
     private int version;
+
+    public static OrderResponse mapToOrderResponse(OrderEntity orderEntity) {
+        return OrderResponse.builder()
+            .orderId(orderEntity.getId())
+            .accountId(orderEntity.getAccountId())
+            .symbol(orderEntity.getSymbol())
+            .side(orderEntity.getSide())
+            .type(orderEntity.getType())
+            .quantity(orderEntity.getQuantity())
+            .limitPrice(orderEntity.getLimitPrice())
+            .status(orderEntity.getStatus())
+            .createdAt(orderEntity.getCreatedAt())
+            .updatedAt(orderEntity.getUpdatedAt())
+            .build();
+    }
 
     @PrePersist
     public void prePersistUpdate() throws OrderEntityValidationException {
