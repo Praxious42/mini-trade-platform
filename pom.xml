@@ -6,7 +6,8 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.0.2</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
+
     </parent>
     <groupId>com.pbkour.mintrade</groupId>
     <artifactId>mini-trade-platform</artifactId>
@@ -15,34 +16,29 @@
     <name>mini-trade-platform</name>
     <description>Demo project for a mini trade platform</description>
     <url/>
-
     <licenses>
         <license/>
     </licenses>
-
     <developers>
         <developer/>
     </developers>
-
     <modules>
         <module>order-service</module>
         <module>execution-service</module>
         <module>portfolio-service</module>
         <module>commons</module>
         <module>infra</module>
+        <module>bdd</module>
     </modules>
-
     <scm>
         <connection/>
         <developerConnection/>
         <tag/>
         <url/>
     </scm>
-
     <properties>
         <java.version>17</java.version>
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -57,13 +53,11 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -98,7 +92,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -107,5 +100,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -1,6 +1,7 @@
 package com.pbkour.mintrade.order.controllers;
 
 import com.pbkour.mintrade.commons.dto.Order;
+import com.pbkour.mintrade.commons.responses.OrderResponse;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
@@ -19,15 +20,15 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<String> createOrder(@RequestBody Order order) {
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody Order order) {
         log.debug("Received order creation request with payload: {}", order);
         log.info("Received order creation request");
 
-        UUID orderId = orderService.createOrder(order);
+        var orderResponse = orderService.createOrder(order);
 
-        log.info("Created order with id: {}", orderId);
+        log.info("Created order with id: {}", orderResponse.getOrderId());
 
-        return ResponseEntity.ok("Publishing order with id: " + orderId);
+        return ResponseEntity.ok(orderResponse);
     }
 
     @PostMapping("/{id}/cancel")
@@ -39,14 +40,14 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable UUID id) {
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable UUID id) {
         log.info("Received order retrieval request for id: {}", id);
 
         return ResponseEntity.ok(orderService.getOrder(id));
     }
 
     @GetMapping
-    public ResponseEntity<List<Order>> listOrdersByAccount(@RequestParam UUID accountId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<List<OrderResponse>> listOrdersByAccount(@RequestParam UUID accountId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         log.info("Received order retrieval request for account: {}", accountId);
         if (page < 0) {
             throw new OrderControllerValidationException("Page must be non-negative");

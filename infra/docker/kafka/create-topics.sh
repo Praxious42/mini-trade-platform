@@ -5,7 +5,6 @@
 # Uses the exact command form (no partitions/replication):
 #   ./kafka-topics.sh --bootstrap-server <host> --create --topic <topic-name>
 
-set -u
 BOOTSTRAP_SERVER=${BOOTSTRAP_SERVER:-broker:9092}
 TOPICS_FILE=/topics.txt
 MAX_WAIT_SECONDS=${MAX_WAIT_SECONDS:-180}

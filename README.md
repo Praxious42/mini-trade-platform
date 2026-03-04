@@ -215,6 +215,49 @@ Run integration tests (if separated with failsafe):
 mvn verify
 ```
 
+## BDD tests (opt-in)
+
+The BDD-style scenarios in the `bdd` module are skipped by default during a regular `clean install` to avoid starting containers and rebuilding images during every developer build.
+
+- Default behavior: `bdd` tests are disabled. The module's POM contains a property `skip.bdd.tests` set to `true`.
+- To run BDD tests explicitly, first ensure the service images exist (Testcontainers/Compose will otherwise try to pull images and fail).
+
+Build service artifacts and images (pick one):
+
+1) Build images using Docker Compose (recommended when you want to reuse the Compose configs):
+
+```powershell
+# From repo root
+docker compose -f .\infra\docker\docker-compose.services.yml build
+```
+
+2) Or build jars and then build each Docker image manually:
+
+```powershell
+# Build jars
+.\mvnw -DskipTests package
+
+# From repo root, build each image (example for order-service)
+docker build -t mintrade/order-service:dev -f order-service/Dockerfile .
+docker build -t mintrade/execution-service:dev -f execution-service/Dockerfile .
+docker build -t mintrade/portfolio-service:dev -f portfolio-service/Dockerfile .
+```
+
+Run the BDD tests (opt-in):
+
+```powershell
+# Run only the bdd module tests (recommended)
+.\mvnw -pl bdd test -Dskip.bdd.tests=false
+
+# Or include them in a full build (opt-in)
+.\mvnw clean install -Dskip.bdd.tests=false
+```
+
+Notes:
+
+- If the images are not present locally, `docker compose` / Testcontainers may try to pull them and fail. Building the images first avoids that.
+- This keeps the standard developer `clean install` fast and predictable while still allowing an opt-in, full end-to-end BDD run when needed.
+
 ## Creating orders (step-by-step)
 
 Below are PowerShell-friendly step-by-step instructions to create a BUY order, then a SELL order for the same account using the example payload you provided. The examples assume the order-service HTTP API is available at http://localhost:8081 and that you started the infra and services (see `infra/docker/README.md` for the Docker Compose quick start).

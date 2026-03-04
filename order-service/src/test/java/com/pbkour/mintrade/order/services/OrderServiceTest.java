@@ -5,6 +5,7 @@ import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.*;
+import com.pbkour.mintrade.commons.responses.OrderResponse;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,9 +82,9 @@ class OrderServiceTest {
         when(riskCheckServiceBlockingStub.checkOrderRisk(any())).thenReturn(RiskCheckResponse.newBuilder().setAllowed(true).build());
         when(ordersRepository.save(any(OrderEntity.class))).thenReturn(saved);
 
-        UUID result = orderService.createOrder(sampleOrder);
+        OrderResponse orderResponse = orderService.createOrder(sampleOrder);
 
-        assertEquals(saved.getId(), result);
+        assertEquals(saved.getId(), orderResponse.getOrderId());
         verify(ordersRepository).save(entityCaptor.capture());
         OrderEntity captured = entityCaptor.getValue();
         assertEquals(sampleOrder.getAccountId(), captured.getAccountId());
@@ -115,7 +116,7 @@ class OrderServiceTest {
 
         when(ordersRepository.findById(id)).thenReturn(Optional.of(entity));
 
-        com.pbkour.mintrade.commons.dto.Order returned = orderService.getOrder(id);
+        OrderResponse returned = orderService.getOrder(id);
 
         assertNotNull(returned);
         assertEquals(sampleOrder.getAccountId(), returned.getAccountId());
@@ -140,7 +141,7 @@ class OrderServiceTest {
 
         when(ordersRepository.findByAccountId(eq(accountId), any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(entity)));
 
-        List<com.pbkour.mintrade.commons.dto.Order> orders = orderService.getAccountOrders(accountId, 0, 1);
+        List<OrderResponse> orders = orderService.getAccountOrders(accountId, 0, 1);
 
         assertEquals(1, orders.size());
         assertEquals(accountId, orders.get(0).getAccountId());
