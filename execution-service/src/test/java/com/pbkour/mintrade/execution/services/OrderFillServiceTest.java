@@ -9,6 +9,7 @@ import com.pbkour.mintrade.commons.orders.ExecutionDecision;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
+import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.execution.entities.FillEntity;
 import com.pbkour.mintrade.execution.generators.ExecutionDecider;
 import com.pbkour.mintrade.execution.repositories.FillsRepository;
@@ -31,20 +32,17 @@ import static org.mockito.Mockito.*;
 class OrderFillServiceTest {
 
     @Mock
+    ProcessedEventsRepository processedEventsRepository;
+    @Mock
     private PriceGenerator priceGenerator;
-
     @Mock
     private FillsRepository fillsRepository;
-
     @Mock
     private ApplicationEventPublisher publisher;
-
     @Mock
     private KafkaTemplate<String, String> kafkaTemplate;
-
     @Mock
     private ObjectMapper mapper;
-
     @InjectMocks
     private OrderFillService orderFillService;
 

@@ -51,7 +51,7 @@ class FillsListenerTest {
 
         FillsListener badListener = new FillsListener(bad, portfolioService);
 
-        assertThrows(IllegalStateException.class, () -> badListener.onOrdersFilled("not-a-json", "k"));
+        assertThrows(FillsListener.FillsListenerException.class, () -> badListener.onOrdersFilled("not-a-json", "k"));
 
         verify(portfolioService, never()).processOrdersFilled(any());
     }

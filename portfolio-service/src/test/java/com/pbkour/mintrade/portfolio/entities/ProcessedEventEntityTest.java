@@ -1,5 +1,6 @@
 package com.pbkour.mintrade.portfolio.entities;
 
+import com.pbkour.mintrade.commons.entities.ProcessedEventEntity;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

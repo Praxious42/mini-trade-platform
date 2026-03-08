@@ -4,10 +4,12 @@ import com.pbkour.mintrade.commons.RiskCheckRequest;
 import com.pbkour.mintrade.commons.RiskCheckResponse;
 import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.dto.Order;
+import com.pbkour.mintrade.commons.entities.ProcessedEventEntity;
 import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
+import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.commons.responses.OrderResponse;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +36,7 @@ public class OrderService {
     private final ApplicationEventPublisher publisher;
     private final RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
     private final RejectedOrderService rejectedOrderService;
+    private final ProcessedEventsRepository processedEventsRepository;
 
     @Transactional
     public OrderResponse createOrder(Order order) {
@@ -96,6 +100,7 @@ public class OrderService {
                 log.info("Total quantity filled for orderId={} is {}", orderId, quantityFilled);
                 order.setStatus(quantityFilled.compareTo(order.getQuantity()) < 0 ? Status.PARTIALLY_FILLED : Status.FILLED);
                 ordersRepository.save(order);
+                processedEventsRepository.save(new ProcessedEventEntity(ordersFilled.getEventId(), Instant.now()));
             },
             () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)
         );
@@ -108,6 +113,7 @@ public class OrderService {
             order -> {
                 order.setStatus(Status.REJECTED);
                 ordersRepository.save(order);
+                processedEventsRepository.save(new ProcessedEventEntity(ordersRejected.getEventId(), Instant.now()));
             },
             () -> log.warn("Received OrdersRejected event for non-existent orderId={}", orderId)
         );

@@ -3,6 +3,7 @@ package com.pbkour.mintrade.order.kafka.listeners;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
+import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -16,17 +17,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FillsListenerTest {
 
     @Mock
+    ProcessedEventsRepository processedEventsRepository;
+    @Mock
     private ObjectMapper objectMapper;
-
     @Mock
     private OrderService orderService;
-
     @InjectMocks
     private FillsListener fillsListener;
 
@@ -37,8 +39,7 @@ class FillsListenerTest {
     void onOrdersFilled_happyPath_callsService() throws Exception {
         String message = "{\"event\":\"ok\"}";
 
-        OrdersFilled payload = new OrdersFilled();
-        payload.setOrderId(UUID.randomUUID());
+        OrdersFilled payload = OrdersFilled.builder().orderId(UUID.randomUUID()).eventId(UUID.randomUUID()).build();
 
         when(objectMapper.readValue(message, OrdersFilled.class)).thenReturn(payload);
 
@@ -55,7 +56,7 @@ class FillsListenerTest {
         when(objectMapper.readValue(badMessage, OrdersFilled.class)).thenThrow(new JsonProcessingException("bad payload") {
         });
 
-        fillsListener.onOrdersFilled(badMessage, "key-2");
+        assertThrows(FillsListener.FillsListenerException.class, () -> fillsListener.onOrdersFilled(badMessage, "key-2"));
 
         verify(orderService, never()).updateFilledOrder(any());
     }

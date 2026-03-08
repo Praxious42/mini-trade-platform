@@ -5,6 +5,7 @@ import com.pbkour.mintrade.commons.RiskCheckServiceGrpc;
 import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.*;
+import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.commons.responses.OrderResponse;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
@@ -35,11 +36,11 @@ import static org.mockito.Mockito.*;
 class OrderServiceTest {
 
     @Mock
+    ProcessedEventsRepository processedEventsRepository;
+    @Mock
     private OrdersRepository ordersRepository;
-
     @Mock
     private ApplicationEventPublisher publisher;
-
     @Mock
     private RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
 
