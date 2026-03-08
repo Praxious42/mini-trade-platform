@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.portfolio.services.PortfolioService;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,12 +27,16 @@ public class FillsListener {
             portfolioService.processOrdersFilled(payload);
         } catch (Exception e) {
             log.error("[FillsListener] failed to process orders.filled key={}", key, e);
-            throw new IllegalStateException(e);
+            throw new FillsListenerException(e);
         }
     }
 
     @KafkaListener(topics = "orders.filled.dlq")
     public void onDlq(ConsumerRecord<String, String> consumerRecord) {
         log.info("[FillsListenerDLQ] received orders.filled.dlq consumerRecord={}", consumerRecord);
+    }
+
+    @StandardException
+    public static class FillsListenerException extends RuntimeException {
     }
 }

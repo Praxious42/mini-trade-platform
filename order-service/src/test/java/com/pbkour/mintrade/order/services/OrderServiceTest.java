@@ -6,6 +6,7 @@ import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.*;
 import com.pbkour.mintrade.commons.responses.OrderResponse;
+import com.pbkour.mintrade.commons.services.ProcessedEventRecorder;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,11 +36,11 @@ import static org.mockito.Mockito.*;
 class OrderServiceTest {
 
     @Mock
+    ProcessedEventRecorder processedEventRecorder;
+    @Mock
     private OrdersRepository ordersRepository;
-
     @Mock
     private ApplicationEventPublisher publisher;
-
     @Mock
     private RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
 
@@ -61,6 +62,8 @@ class OrderServiceTest {
             .quantity(BigDecimal.valueOf(100))
             .limitPrice(new BigDecimal("150.50"))
             .build();
+
+        lenient().when(processedEventRecorder.markEventProcessed(any(UUID.class))).thenReturn(true);
     }
 
     @Test

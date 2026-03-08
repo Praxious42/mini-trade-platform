@@ -1,15 +1,3 @@
-DAY 11 — Reliability: retries, DLQ, idempotency hardening
-Goal: Production-ish behavior for Kafka flows.
-Checklist:
-- Configure retries/backoff in consumers
-- Route poison messages to DLQ topic
-- Add processed_events usage where missing
-Acceptance:
-- Test demonstrates failed message goes to DLQ (can be lightweight)
-
-
----
-
 DAY 11 — Security (optional but nice): simple JWT on order REST API
 Goal: Demonstrate Spring Security.
 Checklist:

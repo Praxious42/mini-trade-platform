@@ -1,4 +1,4 @@
-package com.pbkour.mintrade.portfolio.entities;
+package com.pbkour.mintrade.commons.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

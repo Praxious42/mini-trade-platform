@@ -3,6 +3,7 @@ package com.pbkour.mintrade.order.kafka.listeners;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
+import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -14,12 +15,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RejectedListenerTest {
     private final ObjectMapper mapper = ObjectMapperFactory.create();
-
+    @Mock
+    ProcessedEventsRepository processedEventsRepository;
     @Mock
     private OrderService orderService;
 
@@ -41,10 +44,10 @@ class RejectedListenerTest {
     }
 
     @Test
-    void onOrdersRejected_handlesMalformedJsonWithoutThrowing() {
+    void onOrdersRejected_throwsRejectedListenerException() {
         RejectedListener listener = new RejectedListener(mapper, orderService);
 
-        assertDoesNotThrow(() -> listener.onOrdersRejected("not-a-json", "k"));
+        assertThrows(RejectedListener.RejectedListenerException.class, () -> listener.onOrdersRejected("not-a-json", "k"));
 
         verify(orderService, never()).rejectOrder(any());
     }

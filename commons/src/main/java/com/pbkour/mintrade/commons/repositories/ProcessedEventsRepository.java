@@ -1,6 +1,6 @@
-package com.pbkour.mintrade.portfolio.repositories;
+package com.pbkour.mintrade.commons.repositories;
 
-import com.pbkour.mintrade.portfolio.entities.ProcessedEventEntity;
+import com.pbkour.mintrade.commons.entities.ProcessedEventEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

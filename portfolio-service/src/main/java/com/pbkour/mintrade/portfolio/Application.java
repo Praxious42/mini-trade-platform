@@ -7,8 +7,14 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EnableJpaRepositories("com.pbkour.mintrade.portfolio.repositories")
-@EntityScan("com.pbkour.mintrade.portfolio.entities")
+@EnableJpaRepositories({
+    "com.pbkour.mintrade.portfolio.repositories",
+    "com.pbkour.mintrade.commons.repositories"
+})
+@EntityScan({
+    "com.pbkour.mintrade.portfolio.entities",
+    "com.pbkour.mintrade.commons.entities"
+})
 @ComponentScan(basePackages = {
     "com.pbkour.mintrade.portfolio",
     "com.pbkour.mintrade.commons"

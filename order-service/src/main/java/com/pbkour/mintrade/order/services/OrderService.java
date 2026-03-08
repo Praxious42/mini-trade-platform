@@ -9,6 +9,7 @@ import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.commons.orders.Status;
 import com.pbkour.mintrade.commons.responses.OrderResponse;
+import com.pbkour.mintrade.commons.services.ProcessedEventRecorder;
 import com.pbkour.mintrade.order.entities.OrderEntity;
 import com.pbkour.mintrade.order.repositories.OrdersRepository;
 import io.grpc.StatusRuntimeException;
@@ -33,6 +34,7 @@ public class OrderService {
     private final ApplicationEventPublisher publisher;
     private final RiskCheckServiceGrpc.RiskCheckServiceBlockingStub riskCheckServiceBlockingStub;
     private final RejectedOrderService rejectedOrderService;
+    private final ProcessedEventRecorder processedEventRecorder;
 
     @Transactional
     public OrderResponse createOrder(Order order) {
@@ -89,6 +91,13 @@ public class OrderService {
     @Transactional
     public void updateFilledOrder(OrdersFilled ordersFilled) {
         log.info("Updating filled orders for {}", ordersFilled);
+        UUID eventId = ordersFilled.getEventId();
+
+        if (!processedEventRecorder.markEventProcessed(eventId)) {
+            log.info("Skipping processing for already-processed eventId={}", eventId);
+            return;
+        }
+
         UUID orderId = ordersFilled.getOrderId();
         ordersRepository.findById(orderId).ifPresentOrElse(
             order -> {
@@ -103,6 +112,13 @@ public class OrderService {
 
     @Transactional
     public void rejectOrder(OrdersRejected ordersRejected) {
+        UUID eventId = ordersRejected.getEventId();
+
+        if (!processedEventRecorder.markEventProcessed(eventId)) {
+            log.info("Skipping processing for already-processed eventId={}", eventId);
+            return;
+        }
+
         UUID orderId = ordersRejected.getOrderId();
         ordersRepository.findById(orderId).ifPresentOrElse(
             order -> {
