@@ -3,7 +3,6 @@ package com.pbkour.mintrade.order.kafka.listeners;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
-import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -22,9 +21,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FillsListenerTest {
-
-    @Mock
-    ProcessedEventsRepository processedEventsRepository;
     @Mock
     private ObjectMapper objectMapper;
     @Mock
@@ -70,4 +66,3 @@ class FillsListenerTest {
         verifyNoInteractions(orderService);
     }
 }
-

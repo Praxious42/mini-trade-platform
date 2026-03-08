@@ -36,7 +36,7 @@ class RejectedListenerTest {
 
         String json = mapper.writeValueAsString(payload);
 
-        RejectedListener listener = new RejectedListener(mapper, orderService, processedEventsRepository);
+        RejectedListener listener = new RejectedListener(mapper, orderService);
 
         assertDoesNotThrow(() -> listener.onOrdersRejected(json, "key-1"));
 
@@ -45,7 +45,7 @@ class RejectedListenerTest {
 
     @Test
     void onOrdersRejected_throwsRejectedListenerException() {
-        RejectedListener listener = new RejectedListener(mapper, orderService, processedEventsRepository);
+        RejectedListener listener = new RejectedListener(mapper, orderService);
 
         assertThrows(RejectedListener.RejectedListenerException.class, () -> listener.onOrdersRejected("not-a-json", "k"));
 
@@ -54,7 +54,7 @@ class RejectedListenerTest {
 
     @Test
     void onDlq_handlesConsumerRecordWithoutThrowing() {
-        RejectedListener listener = new RejectedListener(mapper, orderService, processedEventsRepository);
+        RejectedListener listener = new RejectedListener(mapper, orderService);
 
         ConsumerRecord<String, String> consumerRecord = new ConsumerRecord<>("orders.rejected.dlq", 0, 0L, "key-1", "{\"some\":\"payload\"}");
 

@@ -4,7 +4,7 @@ import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
-import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
+import com.pbkour.mintrade.commons.services.ProcessedEventRecorder;
 import com.pbkour.mintrade.portfolio.entities.AccountEntity;
 import com.pbkour.mintrade.portfolio.entities.PositionEntity;
 import com.pbkour.mintrade.portfolio.entities.PositionEntity.PositionId;
@@ -18,7 +18,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -33,7 +32,8 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PortfolioServiceTest {
-
+    @Mock
+    ProcessedEventRecorder processedEventRecorder;
     @Captor
     ArgumentCaptor<AccountEntity> accountCaptor;
     @Captor
@@ -42,8 +42,6 @@ class PortfolioServiceTest {
     private PositionsRepository positionsRepository;
     @Mock
     private AccountsRepository accountsRepository;
-    @Mock
-    private ProcessedEventsRepository processedEventsRepository;
     @InjectMocks
     private PortfolioService portfolioService;
     private UUID accountId;
@@ -51,6 +49,7 @@ class PortfolioServiceTest {
 
     @BeforeEach
     void setUp() {
+        when(processedEventRecorder.markEventProcessed(any())).thenReturn(true);
         accountId = UUID.randomUUID();
         eventId = UUID.randomUUID();
     }
@@ -63,9 +62,6 @@ class PortfolioServiceTest {
             .equity(new BigDecimal("1000.00"))
             .createdAt(Instant.now())
             .build();
-
-        when(processedEventsRepository.existsById(eventId)).thenReturn(false);
-        // processedEventsRepository.save should work normally
 
         when(accountsRepository.findById(accountId)).thenReturn(Optional.of(existing));
 
@@ -86,7 +82,6 @@ class PortfolioServiceTest {
         portfolioService.processOrdersFilled(payload);
 
         // then
-        verify(processedEventsRepository).save(any());
         verify(accountsRepository).save(accountCaptor.capture());
         AccountEntity savedAccount = accountCaptor.getValue();
 
@@ -108,9 +103,6 @@ class PortfolioServiceTest {
     @Test
     void testProcessOrdersFilled_sell_decreasesPosition_and_updatesAccountEquity() {
         // given
-        when(processedEventsRepository.existsById(eventId)).thenReturn(false);
-        when(processedEventsRepository.save(any())).thenReturn(null);
-
         AccountEntity existing = AccountEntity.builder()
             .id(accountId)
             .equity(new BigDecimal("500.00"))
@@ -157,8 +149,7 @@ class PortfolioServiceTest {
 
     @Test
     void testProcessOrdersFilled_skipsWhenAlreadyProcessed() {
-        when(processedEventsRepository.existsById(eventId)).thenReturn(true);
-
+        when(processedEventRecorder.markEventProcessed(any())).thenReturn(false);
         OrdersFilled payload = OrdersFilled.builder()
             .eventId(eventId)
             .accountId(accountId)
@@ -169,36 +160,12 @@ class PortfolioServiceTest {
 
         portfolioService.processOrdersFilled(payload);
 
-        verify(processedEventsRepository, never()).save(any());
-        verify(accountsRepository, never()).findById(any());
-        verify(positionsRepository, never()).save(any());
-    }
-
-    @Test
-    void testProcessOrdersFilled_concurrentProcessedEventHandledGracefully() {
-        when(processedEventsRepository.existsById(eventId)).thenReturn(false);
-        // Simulate concurrent insert: save throws DataIntegrityViolationException
-        doThrow(new DataIntegrityViolationException("duplicate key")).when(processedEventsRepository).save(any());
-
-        OrdersFilled payload = OrdersFilled.builder()
-            .eventId(eventId)
-            .accountId(accountId)
-            .symbol(Symbol.AAPL)
-            .side(Side.BUY)
-            .fills(List.of())
-            .build();
-
-        // Should not throw
-        portfolioService.processOrdersFilled(payload);
-
-        // No further processing should happen
         verify(accountsRepository, never()).findById(any());
         verify(positionsRepository, never()).save(any());
     }
 
     @Test
     void testProcessOrdersFilled_decreaseNonexistentPosition_throws() {
-        when(processedEventsRepository.existsById(eventId)).thenReturn(false);
         when(accountsRepository.findById(accountId)).thenReturn(Optional.of(AccountEntity.builder()
             .id(accountId)
             .equity(new BigDecimal("100.00"))
@@ -224,7 +191,6 @@ class PortfolioServiceTest {
 
     @Test
     void testProcessOrdersFilled_decreaseMoreThanExisting_throws() {
-        when(processedEventsRepository.existsById(eventId)).thenReturn(false);
         when(accountsRepository.findById(accountId)).thenReturn(Optional.of(AccountEntity.builder()
             .id(accountId)
             .equity(new BigDecimal("100.00"))

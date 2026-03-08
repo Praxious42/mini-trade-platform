@@ -1,10 +1,9 @@
 package com.pbkour.mintrade.portfolio.services;
 
-import com.pbkour.mintrade.commons.entities.ProcessedEventEntity;
 import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.commons.orders.Side;
-import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
+import com.pbkour.mintrade.commons.services.ProcessedEventRecorder;
 import com.pbkour.mintrade.portfolio.entities.AccountEntity;
 import com.pbkour.mintrade.portfolio.entities.PositionEntity;
 import com.pbkour.mintrade.portfolio.repositories.AccountsRepository;
@@ -12,13 +11,11 @@ import com.pbkour.mintrade.portfolio.repositories.PositionsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.StandardException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.util.UUID;
 
 import static java.util.Optional.ofNullable;
@@ -29,27 +26,14 @@ import static java.util.Optional.ofNullable;
 public class PortfolioService {
     private final PositionsRepository positionsRepository;
     private final AccountsRepository accountsRepository;
-    private final ProcessedEventsRepository processedEventsRepository;
+    private final ProcessedEventRecorder processedEventRecorder;
 
     @Transactional
     public void processOrdersFilled(OrdersFilled payload) {
-        // Idempotency check using eventId
         UUID eventId = payload.getEventId();
-        if (eventId == null) {
-            log.warn("Received OrdersFilled with null eventId, skipping");
-            return;
-        }
 
-        if (processedEventsRepository.existsById(eventId)) {
-            log.info("Ignoring already processed event eventId={}", eventId);
-            return;
-        }
-
-        try {
-            processedEventsRepository.save(new ProcessedEventEntity(eventId, Instant.now()));
-            processedEventsRepository.flush();
-        } catch (DataIntegrityViolationException ex) {
-            log.info("Event already processed (concurrent) eventId={}", eventId);
+        if (!processedEventRecorder.markEventProcessed(eventId)) {
+            log.info("Skipping processing for already-processed eventId={}", eventId);
             return;
         }
 

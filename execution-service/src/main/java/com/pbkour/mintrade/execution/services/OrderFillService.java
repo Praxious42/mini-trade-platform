@@ -1,7 +1,6 @@
 package com.pbkour.mintrade.execution.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbkour.mintrade.commons.entities.ProcessedEventEntity;
 import com.pbkour.mintrade.commons.generators.PriceGenerator;
 import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersCreated;
@@ -10,7 +9,7 @@ import com.pbkour.mintrade.commons.orders.ExecutionDecision;
 import com.pbkour.mintrade.commons.orders.RejectionReason;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Type;
-import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
+import com.pbkour.mintrade.commons.services.ProcessedEventRecorder;
 import com.pbkour.mintrade.execution.entities.FillEntity;
 import com.pbkour.mintrade.execution.generators.ExecutionDecider;
 import com.pbkour.mintrade.execution.repositories.FillsRepository;
@@ -35,7 +34,7 @@ public class OrderFillService {
     private final ApplicationEventPublisher publisher;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper mapper;
-    private final ProcessedEventsRepository processedEventsRepository;
+    private final ProcessedEventRecorder processedEventRecorder;
 
     private static boolean isUnfavorableLimit(Order order, BigDecimal price) {
         return order.getType() == Type.LIMIT && ((order.getSide().equals(Side.BUY) && price.compareTo(order.getLimitPrice()) > 0)
@@ -44,6 +43,12 @@ public class OrderFillService {
 
     @Transactional
     public void fillOrder(OrdersCreated payload) {
+        UUID eventId = payload.getEventId();
+        if (!processedEventRecorder.markEventProcessed(eventId)) {
+            log.info("Skipping processing for already-processed eventId={}", eventId);
+            return;
+        }
+
         boolean accepted = ExecutionDecider.generateExecutionDecision().equals(ExecutionDecision.ACCEPTED);
         if (!accepted) {
             log.info("Rejecting order {} for symbol {}", payload.getOrder().getOrderId(), payload.getOrder().getSymbol());
@@ -68,8 +73,6 @@ public class OrderFillService {
             .build()).toList();
 
         List<FillEntity> savedFillEntities = fillsRepository.saveAll(fillEntities);
-        processedEventsRepository.save(ProcessedEventEntity.builder()
-            .eventId(payload.getEventId()).processedAt(Instant.now()).build());
 
         publisher.publishEvent(new FillsSavedEvent(savedFillEntities, order));
     }

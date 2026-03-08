@@ -9,10 +9,11 @@ import com.pbkour.mintrade.commons.orders.ExecutionDecision;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Symbol;
 import com.pbkour.mintrade.commons.orders.Type;
-import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
+import com.pbkour.mintrade.commons.services.ProcessedEventRecorder;
 import com.pbkour.mintrade.execution.entities.FillEntity;
 import com.pbkour.mintrade.execution.generators.ExecutionDecider;
 import com.pbkour.mintrade.execution.repositories.FillsRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.*;
 class OrderFillServiceTest {
 
     @Mock
-    ProcessedEventsRepository processedEventsRepository;
+    private ProcessedEventRecorder processedEventRecorder;
     @Mock
     private PriceGenerator priceGenerator;
     @Mock
@@ -49,6 +50,11 @@ class OrderFillServiceTest {
     @Captor
     private ArgumentCaptor<List<FillEntity>> fillCaptor;
 
+    @BeforeEach
+    void setup() {
+        when(processedEventRecorder.markEventProcessed(any())).thenReturn(Boolean.TRUE);
+    }
+
     @Test
     void fillOrder_whenAccepted_savesFill_andPublishesEvent() {
         Order order = Order.builder()
@@ -61,6 +67,7 @@ class OrderFillServiceTest {
             .build();
 
         OrdersCreated payload = OrdersCreated.builder()
+            .eventId(UUID.randomUUID())
             .order(order)
             .build();
 
