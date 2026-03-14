@@ -422,3 +422,29 @@ A minimal `k8s/` directory provides manifests for:
 
 MIT
 
+## Authentication (authorisation-server)
+
+The `authorisation-server` issues JWTs at `POST /auth/login`. Use this token to call protected endpoints on `order-service`.
+
+1) Obtain a token (example using curl):
+
+```bash
+# Replace username/password with a seeded user in auth DB
+curl -s -X POST "http://localhost:8084/auth/login" -d "username=alice&password=password"
+```
+
+The endpoint returns the raw JWT string.
+
+2) Call a protected order endpoint with the token:
+
+```bash
+# Use the token returned by the login call in the Authorization header
+TOKEN="<paste-token-here>"
+
+curl -X POST http://localhost:8081/api/v1/orders \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"accountId":"3fa85f64-5717-4562-b3fc-2c963f66afa6","symbol":"EURUSD","side":"BUY","type":"MARKET","quantity":1000}'
+```
+
+Local compose note: `infra/docker/docker-compose.services.yml` sets `JWT_SECRET` / `SECURITY_JWT_SECRET` for the `order-service` so it uses the same signing secret as the authorisation server by default. Override with your own secret in a `.env` file or by exporting `JWT_SECRET` in your shell before running docker-compose.

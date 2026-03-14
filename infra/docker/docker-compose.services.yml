@@ -1,4 +1,23 @@
 services:
+    authorisation-server:
+        build:
+            context: ../..
+            dockerfile: authorisation-server/Dockerfile
+        image: mintrade/authorisation-server:dev
+        container_name: authorisation-server
+        environment:
+            DB_HOST: mintrade-auth
+            DB_PORT: 5432
+            DB_NAME: mintrade-auth
+            DB_USER: postgres
+            DB_PASSWORD: password
+            PORT: 8084
+            JWT_SECRET: ${JWT_SECRET:-MyJwtSecretKey12345MyJwtSecretKey12345MyJwtSecretKey12345}
+        ports:
+            - "8084:8084"
+        networks:
+            - mintrade-net
+
     order-service:
         build:
             context: ../..
@@ -15,6 +34,10 @@ services:
             PORT: 8081
             PORTFOLIO_GRPC_HOST: portfolio-service
             PORTFOLIO_GRPC_PORT: 8085
+            # JWT secret used by authorisation-server (exposed to order-service here so both use same secret)
+            # Can be overridden by setting JWT_SECRET in the environment or a .env file
+            JWT_SECRET: ${JWT_SECRET:-MyJwtSecretKey12345MyJwtSecretKey12345MyJwtSecretKey12345}
+            SECURITY_JWT_SECRET: ${SECURITY_JWT_SECRET:-${JWT_SECRET:-MyJwtSecretKey12345MyJwtSecretKey12345MyJwtSecretKey12345}}
         ports:
             - "8081:8081"
         networks:
