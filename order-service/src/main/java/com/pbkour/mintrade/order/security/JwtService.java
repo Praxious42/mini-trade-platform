@@ -12,9 +12,6 @@ public class JwtService {
     @Value("${security.jwt.secret:${jwt.secret:change_me_dev_secret}}")
     private String secret;
 
-    @Value("${security.jwt.expiration:3600000}")
-    private long expiration;
-
     public String extractUsername(String token) {
         return Jwts.parser()
             .setSigningKey(secret)
