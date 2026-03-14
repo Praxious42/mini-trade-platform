@@ -352,7 +352,7 @@ class RiskServiceTest {
             .netQty(new BigDecimal("10"))
             .avgPrice(new BigDecimal("100.00"))
             .build();
-        
+
         when(positionsRepository.findByIdAccountId(accountId)).thenReturn(List.of(pos));
 
         RiskService.RiskCheckResult result = riskService.riskCheck(accountId, Symbol.EURUSD, new BigDecimal("5"), Side.SELL);
