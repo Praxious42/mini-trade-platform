@@ -114,10 +114,51 @@ services:
         networks:
             - mintrade-net
 
+    mintrade-auth:
+        image: postgres:15
+        container_name: mintrade-auth
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: mintrade-auth
+        ports:
+            - "1236:5432"
+        volumes:
+            - auth-data:/var/lib/postgresql/data
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 10s
+        networks:
+            - mintrade-net
+
+    auth-init-runner:
+        image: python:3.11-slim
+        container_name: auth-init-runner
+        depends_on:
+            mintrade-auth:
+                condition: service_healthy
+        environment:
+            PGUSER: postgres
+            PGPASSWORD: password
+            PGDATABASE: mintrade-auth
+            PGHOST: mintrade-auth
+            SCRIPTS_DIR: /scripts
+        volumes:
+            - ./auth/initdb.d:/scripts:ro
+            - ./auth/run-init.py:/usr/local/bin/run-init.py:ro
+        entrypoint: [ "/bin/sh","-c","apt-get update >/dev/null && apt-get install -y --no-install-recommends postgresql-client gzip >/dev/null && python /usr/local/bin/run-init.py" ]
+        restart: "no"
+        networks:
+            - mintrade-net
+
 volumes:
     kafka-data:
     order-data:
     portfolio-data:
+    auth-data:
 
 networks:
     mintrade-net:
