@@ -34,6 +34,9 @@ public class AccountLimitEntity {
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+    @Version
+    @Column(name = "version", nullable = false)
+    private int version;
 
     @PrePersist
     public void prePersist() throws AccountLimitEntityValidationException {
