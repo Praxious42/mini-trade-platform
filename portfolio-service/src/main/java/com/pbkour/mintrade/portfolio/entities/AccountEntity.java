@@ -26,6 +26,9 @@ public class AccountEntity {
     private BigDecimal equity;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+    @Version
+    @Column(name = "version", nullable = false)
+    private int version;
 
     @PrePersist
     public void prePersist() throws AccountEntityValidationException {
