@@ -34,4 +34,4 @@ jobs:
                     echo "TESTCONTAINERS_REUSE_ENABLE=true" >> $GITHUB_ENV
 
             -   name: Build + Test (Maven)
-                run: mvn -B -ntp verify
+                run: ./mvnw -B -ntp verify
