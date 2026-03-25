@@ -2,6 +2,15 @@
 
 A small event-driven trading backend built with **Java 17** and **Spring Boot**
 
+## Architecture
+
+<div style="text-align:center;">
+  <a href="docs/architecture-diagram.png" target="_blank" rel="noopener">
+    <img src="docs/architecture-diagram.png" alt="Architecture diagram" style="width:100%;max-width:1000px;height:auto;border:0;display:block;margin:0 auto;" />
+  </a>
+  <p style="font-size:90%;color:#6c757d;margin-top:0.5rem;">High-level architecture diagram — click to open full resolution (docs/architecture-diagram.png).</p>
+</div>
+
 ## What this project demonstrates
 
 - **Microservices**: clear boundaries, independent persistence
