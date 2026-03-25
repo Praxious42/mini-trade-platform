@@ -82,3 +82,23 @@ docker compose -f .\infra\docker\docker-compose.services.yml up -d order-service
 ```powershell
 docker compose -f .\infra\docker\docker-compose.services.yml logs -f portfolio-service
 ```
+
+## Metrics: Prometheus + Grafana (minimal profile)
+
+A minimal compose profile brings up Prometheus and Grafana for local development. The stack will scrape the services running on the host at ports 8081..8084 by using `host.docker.internal` as the target host.
+
+Start the metrics stack:
+
+```powershell
+# from repo root
+docker compose -f .\infra\docker\docker-compose.metrics.yml up -d
+```
+
+Access:
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (user: admin, password: admin)
+
+Notes:
+- Prometheus is configured to scrape `host.docker.internal:8081..8084` (order, execution, portfolio, auth). This works well on Docker Desktop (Windows/macOS). On Linux, add `extra_hosts:` mapping `host.docker.internal:host-gateway` to the `prometheus` service in the compose file or run the services in containers.
+- Grafana is auto-provisioned with a Prometheus datasource that points at the `prometheus` container (http://prometheus:9090).
+- If services run inside Docker Compose instead of on the host, change `prometheus/prometheus.yml` targets accordingly to container hostnames or use a file_sd discovery.
