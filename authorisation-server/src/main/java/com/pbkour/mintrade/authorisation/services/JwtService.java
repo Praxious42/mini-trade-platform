@@ -15,6 +15,11 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
+    public JwtService(String secret, long expiration) {
+        this.secret = secret;
+        this.expiration = expiration;
+    }
+
     public String generateToken(String username) {
         return Jwts.builder()
             .subject(username)
