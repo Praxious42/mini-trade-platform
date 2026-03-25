@@ -7,16 +7,3 @@ Checklist:
 - (Optional) build Docker images
 Acceptance:
 - PR/commit triggers pipeline; green build required
-
-
----
-
-
-DAY 13 — Metrics + dashboards (lightweight)
-Goal: Observability polish.
-Checklist:
-- Enable Prometheus endpoint via Actuator
-- Expose JVM + http server metrics
-- (Optional) add a minimal Grafana/Prometheus compose profile
-Acceptance:
-- /actuator/prometheus returns metrics
