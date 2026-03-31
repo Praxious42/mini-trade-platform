@@ -1,9 +1,9 @@
 package com.pbkour.mintrade.order.kafka.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
-import com.pbkour.mintrade.commons.repositories.ProcessedEventsRepository;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -20,9 +20,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RejectedListenerTest {
-    private final ObjectMapper mapper = ObjectMapperFactory.create();
-    @Mock
-    ProcessedEventsRepository processedEventsRepository;
     @Mock
     private OrderService orderService;
 
@@ -34,9 +31,9 @@ class RejectedListenerTest {
             .orderId(UUID.randomUUID())
             .build();
 
-        String json = mapper.writeValueAsString(payload);
+        String json = ObjectMapperFactory.create().writeValueAsString(payload);
 
-        RejectedListener listener = new RejectedListener(mapper, orderService);
+        RejectedListener listener = new RejectedListener(new KafkaJsonListenerSupport(ObjectMapperFactory.create()), orderService);
 
         assertDoesNotThrow(() -> listener.onOrdersRejected(json, "key-1"));
 
@@ -45,7 +42,7 @@ class RejectedListenerTest {
 
     @Test
     void onOrdersRejected_throwsRejectedListenerException() {
-        RejectedListener listener = new RejectedListener(mapper, orderService);
+        RejectedListener listener = new RejectedListener(new KafkaJsonListenerSupport(ObjectMapperFactory.create()), orderService);
 
         assertThrows(RejectedListener.RejectedListenerException.class, () -> listener.onOrdersRejected("not-a-json", "k"));
 
@@ -54,7 +51,7 @@ class RejectedListenerTest {
 
     @Test
     void onDlq_handlesConsumerRecordWithoutThrowing() {
-        RejectedListener listener = new RejectedListener(mapper, orderService);
+        RejectedListener listener = new RejectedListener(new KafkaJsonListenerSupport(ObjectMapperFactory.create()), orderService);
 
         ConsumerRecord<String, String> consumerRecord = new ConsumerRecord<>("orders.rejected.dlq", 0, 0L, "key-1", "{\"some\":\"payload\"}");
 

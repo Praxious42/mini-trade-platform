@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.execution.spring.listeners;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonPublisherSupport;
 import com.pbkour.mintrade.commons.kafka.Fill;
 import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
@@ -14,7 +14,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -29,19 +28,16 @@ import static org.mockito.Mockito.*;
 class FillSavedListenerTest {
 
     @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
-
-    @Mock
-    private ObjectMapper mapper;
+    private KafkaJsonPublisherSupport kafkaJsonPublisherSupport;
 
     @InjectMocks
     private FillSavedListener listener;
 
     @Captor
-    private ArgumentCaptor<Object> payloadCaptor;
+    private ArgumentCaptor<OrdersFilled> payloadCaptor;
 
     @Test
-    void onSaved_sendsMessage_whenSerializationSucceeds() throws Exception {
+    void onSaved_buildsPayload_andDelegatesToPublisher() {
         UUID fillId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         UUID orderId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         UUID accountId = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -59,18 +55,12 @@ class FillSavedListenerTest {
 
         OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), order);
 
-        String json = "{\"event\":\"orders-filled\"}";
-        when(mapper.writeValueAsString(any())).thenReturn(json);
-
         listener.onSaved(event);
 
-        // capture the object passed to mapper
-        verify(mapper, times(1)).writeValueAsString(payloadCaptor.capture());
-        Object captured = payloadCaptor.getValue();
-        assertNotNull(captured);
-        assertTrue(captured instanceof OrdersFilled);
-
-        OrdersFilled of = (OrdersFilled) captured;
+        verify(kafkaJsonPublisherSupport).publish(eq("orders.filled"), payloadCaptor.capture());
+        OrdersFilled of = payloadCaptor.getValue();
+        assertNotNull(of);
+        assertNotNull(of.getEventId());
         assertNotNull(of.getOccurredAt());
         assertEquals(orderId, of.getOrderId());
         assertEquals(accountId, of.getAccountId());
@@ -83,13 +73,10 @@ class FillSavedListenerTest {
         assertEquals(0, (new BigDecimal("50")).compareTo(fillDto.getQuantity()));
         assertEquals(new BigDecimal("123.45"), fillDto.getPrice());
         assertEquals(ts, fillDto.getTimestamp());
-
-        // verify kafka send called with expected args
-        verify(kafkaTemplate, times(1)).send(eq("orders.filled"), anyString(), eq(json));
     }
 
     @Test
-    void onSaved_doesNotSend_whenSerializationFails() throws Exception {
+    void onSaved_stillDelegatesPayload_whenPublisherHandlesFailures() {
         UUID fillId = UUID.fromString("44444444-4444-4444-4444-444444444444");
         UUID orderId = UUID.fromString("55555555-5555-5555-5555-555555555555");
         UUID accountId = UUID.fromString("66666666-6666-6666-6666-666666666666");
@@ -107,11 +94,8 @@ class FillSavedListenerTest {
 
         OrderFillService.FillsSavedEvent event = new OrderFillService.FillsSavedEvent(List.of(fill), order);
 
-        when(mapper.writeValueAsString(any())).thenThrow(new RuntimeException("boom"));
-
         assertDoesNotThrow(() -> listener.onSaved(event));
 
-        verify(mapper, times(1)).writeValueAsString(any());
-        verify(kafkaTemplate, never()).send(anyString(), anyString(), anyString());
+        verify(kafkaJsonPublisherSupport).publish(eq("orders.filled"), any());
     }
 }
