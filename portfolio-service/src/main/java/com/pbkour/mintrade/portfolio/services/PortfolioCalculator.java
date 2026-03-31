@@ -34,7 +34,7 @@ public class PortfolioCalculator {
 
     private Side requireSide(OrdersFilled payload) {
         return ofNullable(payload.getSide()).orElseThrow(() ->
-            new IllegalStateException("Side is required in OrdersFilled eventId=" + payload.getEventId()));
+            new PortfolioServiceException("Side is required in OrdersFilled eventId=" + payload.getEventId()));
     }
 
     private BigDecimal totalFillValue(List<Fill> fills) {
