@@ -43,7 +43,11 @@ public class ProcessedEventRecorder {
 
     public void processIfNotProcessed(UUID eventId, String eventType, Runnable action) {
         if (!markEventProcessed(eventId)) {
-            log.info("Skipping processing for already-processed {} eventId={}", eventType, eventId);
+            if (eventId == null) {
+                log.info("Skipping processing for {} because eventId is null", eventType);
+            } else {
+                log.info("Skipping processing for already-processed {} eventId={}", eventType, eventId);
+            }
             return;
         }
 
