@@ -1,21 +1,29 @@
 package com.pbkour.mintrade.authorisation.services;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
+
+import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@TestPropertySource(properties = {"jwt.secret=MyJwtSecretKey12345MyJwtSecretKey12345MyJwtSecretKey12345", "jwt.expiration=3600000"})
 class JwtServiceTest {
 
-    @Autowired
-    private JwtService jwtService;
+    private static final String SECRET = "MyJwtSecretKey12345MyJwtSecretKey12345MyJwtSecretKey12345";
+    private static final long EXPIRATION = 3600000L;
 
     @Test
-    void generate_and_validate_token() {
+    void generate_and_validate_token() throws Exception {
+        JwtService jwtService = new JwtService();
+
+        // Inject private fields that would normally come from @Value in a Spring context
+        Field secretField = JwtService.class.getDeclaredField("secret");
+        secretField.setAccessible(true);
+        secretField.set(jwtService, SECRET);
+
+        Field expField = JwtService.class.getDeclaredField("expiration");
+        expField.setAccessible(true);
+        expField.setLong(jwtService, EXPIRATION);
+
         String token = jwtService.generateToken("alice");
 
         String username = jwtService.extractUsername(token);
