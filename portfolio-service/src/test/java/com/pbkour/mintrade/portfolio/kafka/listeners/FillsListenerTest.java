@@ -3,6 +3,7 @@ package com.pbkour.mintrade.portfolio.kafka.listeners;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.portfolio.services.PortfolioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +26,7 @@ class FillsListenerTest {
     void setUp() {
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         portfolioService = mock(PortfolioService.class);
-        listener = new FillsListener(objectMapper, portfolioService);
+        listener = new FillsListener(new KafkaJsonListenerSupport(objectMapper), portfolioService);
     }
 
     @Test
@@ -49,7 +50,7 @@ class FillsListenerTest {
             .thenThrow(new JsonProcessingException("bad json") {
             });
 
-        FillsListener badListener = new FillsListener(bad, portfolioService);
+        FillsListener badListener = new FillsListener(new KafkaJsonListenerSupport(bad), portfolioService);
 
         assertThrows(FillsListener.FillsListenerException.class, () -> badListener.onOrdersFilled("not-a-json", "k"));
 

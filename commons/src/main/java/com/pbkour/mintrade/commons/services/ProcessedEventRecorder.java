@@ -28,7 +28,7 @@ public class ProcessedEventRecorder {
     public boolean markEventProcessed(UUID eventId) {
         try {
             if (eventId == null) {
-                log.warn("Received OrdersFilled with null eventId, processing will be skipped");
+                log.warn("Received event with null eventId, processing will be skipped");
                 return false;
             }
 
@@ -39,5 +39,18 @@ public class ProcessedEventRecorder {
             log.debug("Event {} already processed (duplicate key / DataIntegrityViolation)", eventId);
             return false;
         }
+    }
+
+    public void processIfNotProcessed(UUID eventId, String eventType, Runnable action) {
+        if (!markEventProcessed(eventId)) {
+            if (eventId == null) {
+                log.info("Skipping processing for {} because eventId is null", eventType);
+            } else {
+                log.info("Skipping processing for already-processed {} eventId={}", eventType, eventId);
+            }
+            return;
+        }
+
+        action.run();
     }
 }

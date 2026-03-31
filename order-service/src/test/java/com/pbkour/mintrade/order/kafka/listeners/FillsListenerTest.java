@@ -1,7 +1,7 @@
 package com.pbkour.mintrade.order.kafka.listeners;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.order.services.OrderService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class FillsListenerTest {
     @Mock
-    private ObjectMapper objectMapper;
+    private KafkaJsonListenerSupport kafkaJsonListenerSupport;
     @Mock
     private OrderService orderService;
     @InjectMocks
@@ -37,7 +37,7 @@ class FillsListenerTest {
 
         OrdersFilled payload = OrdersFilled.builder().orderId(UUID.randomUUID()).eventId(UUID.randomUUID()).build();
 
-        when(objectMapper.readValue(message, OrdersFilled.class)).thenReturn(payload);
+        when(kafkaJsonListenerSupport.deserialize(message, OrdersFilled.class)).thenReturn(payload);
 
         fillsListener.onOrdersFilled(message, "key-1");
 
@@ -49,7 +49,7 @@ class FillsListenerTest {
     void onOrdersFilled_whenDeserializationFails_doesNotCallService() throws Exception {
         String badMessage = "not-a-json";
 
-        when(objectMapper.readValue(badMessage, OrdersFilled.class)).thenThrow(new JsonProcessingException("bad payload") {
+        when(kafkaJsonListenerSupport.deserialize(badMessage, OrdersFilled.class)).thenThrow(new JsonProcessingException("bad payload") {
         });
 
         assertThrows(FillsListener.FillsListenerException.class, () -> fillsListener.onOrdersFilled(badMessage, "key-2"));

@@ -34,6 +34,8 @@ import static org.mockito.Mockito.*;
 class PortfolioServiceTest {
     @Mock
     ProcessedEventRecorder processedEventRecorder;
+    @Mock
+    PortfolioCalculator portfolioCalculator;
     @Captor
     ArgumentCaptor<AccountEntity> accountCaptor;
     @Captor
@@ -49,7 +51,11 @@ class PortfolioServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(processedEventRecorder.markEventProcessed(any())).thenReturn(true);
+        lenient().doAnswer(invocation -> {
+            Runnable action = invocation.getArgument(2);
+            action.run();
+            return null;
+        }).when(processedEventRecorder).processIfNotProcessed(any(), anyString(), any(Runnable.class));
         accountId = UUID.randomUUID();
         eventId = UUID.randomUUID();
     }
@@ -77,6 +83,9 @@ class PortfolioServiceTest {
             .side(Side.BUY)
             .fills(fills)
             .build();
+
+        when(portfolioCalculator.calculateNewEquity(payload, existing.getEquity())).thenReturn(new BigDecimal("944.00"));
+        when(portfolioCalculator.calculateNewPosition(payload, null)).thenReturn(new PortfolioCalculator.NewPosition(new BigDecimal("5"), new BigDecimal("11.20")));
 
         // when
         portfolioService.processOrdersFilled(payload);
@@ -130,6 +139,9 @@ class PortfolioServiceTest {
             .fills(fills)
             .build();
 
+        when(portfolioCalculator.calculateNewEquity(payload, existing.getEquity())).thenReturn(new BigDecimal("536.00"));
+        when(portfolioCalculator.calculateNewPosition(payload, oldPos)).thenReturn(new PortfolioCalculator.NewPosition(new BigDecimal("2"), new BigDecimal("10.00")));
+
         // when
         portfolioService.processOrdersFilled(payload);
 
@@ -149,7 +161,7 @@ class PortfolioServiceTest {
 
     @Test
     void testProcessOrdersFilled_skipsWhenAlreadyProcessed() {
-        when(processedEventRecorder.markEventProcessed(any())).thenReturn(false);
+        doAnswer(invocation -> null).when(processedEventRecorder).processIfNotProcessed(eq(eventId), anyString(), any(Runnable.class));
         OrdersFilled payload = OrdersFilled.builder()
             .eventId(eventId)
             .accountId(accountId)
@@ -186,6 +198,9 @@ class PortfolioServiceTest {
             .fills(fills)
             .build();
 
+        when(portfolioCalculator.calculateNewEquity(payload, new BigDecimal("100.00"))).thenReturn(new BigDecimal("100.00"));
+        when(portfolioCalculator.calculateNewPosition(payload, null)).thenThrow(new IllegalStateException("Cannot decrease position that does not exist"));
+
         assertThrows(IllegalStateException.class, () -> portfolioService.processOrdersFilled(payload));
     }
 
@@ -216,6 +231,9 @@ class PortfolioServiceTest {
             .side(Side.SELL)
             .fills(fills)
             .build();
+
+        when(portfolioCalculator.calculateNewEquity(payload, new BigDecimal("100.00"))).thenReturn(new BigDecimal("100.00"));
+        when(portfolioCalculator.calculateNewPosition(payload, oldPos)).thenThrow(new IllegalStateException("Cannot decrease position more than existing quantity"));
 
         assertThrows(IllegalStateException.class, () -> portfolioService.processOrdersFilled(payload));
     }
