@@ -51,7 +51,11 @@ class PortfolioServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(processedEventRecorder.markEventProcessed(any())).thenReturn(true);
+        lenient().doAnswer(invocation -> {
+            Runnable action = invocation.getArgument(2);
+            action.run();
+            return null;
+        }).when(processedEventRecorder).processIfNotProcessed(any(), anyString(), any(Runnable.class));
         accountId = UUID.randomUUID();
         eventId = UUID.randomUUID();
     }
@@ -157,7 +161,7 @@ class PortfolioServiceTest {
 
     @Test
     void testProcessOrdersFilled_skipsWhenAlreadyProcessed() {
-        when(processedEventRecorder.markEventProcessed(any())).thenReturn(false);
+        doAnswer(invocation -> null).when(processedEventRecorder).processIfNotProcessed(eq(eventId), anyString(), any(Runnable.class));
         OrdersFilled payload = OrdersFilled.builder()
             .eventId(eventId)
             .accountId(accountId)

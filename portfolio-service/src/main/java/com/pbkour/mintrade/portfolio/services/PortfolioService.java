@@ -26,44 +26,40 @@ public class PortfolioService {
     @Transactional
     public void processOrdersFilled(OrdersFilled payload) {
         UUID eventId = payload.getEventId();
+        processedEventRecorder.processIfNotProcessed(eventId, "OrdersFilled", () -> {
+            // Update account equity based on fills
+            try {
+                AccountEntity account = accountsRepository.findById(payload.getAccountId())
+                    .orElseThrow(() -> new PortfolioServiceException("Account not found with id=" + payload.getAccountId()));
+                account.setEquity(portfolioCalculator.calculateNewEquity(payload, account.getEquity()));
 
-        if (!processedEventRecorder.markEventProcessed(eventId)) {
-            log.info("Skipping processing for already-processed eventId={}", eventId);
-            return;
-        }
+                accountsRepository.save(account);
 
-        // Update account equity based on fills
-        try {
-            AccountEntity account = accountsRepository.findById(payload.getAccountId())
-                .orElseThrow(() -> new PortfolioServiceException("Account not found with id=" + payload.getAccountId()));
-            account.setEquity(portfolioCalculator.calculateNewEquity(payload, account.getEquity()));
+            } catch (Exception e) {
+                log.error("Failed to update account during OrdersFilled eventId={}", payload.getEventId(), e);
+                throw e;
+            }
 
-            accountsRepository.save(account);
+            // Process the fills and update positions
+            try {
+                PositionEntity.PositionId pid = new PositionEntity.PositionId(payload.getAccountId(), payload.getSymbol());
+                PositionEntity oldPosition = positionsRepository.findById(pid).orElse(null);
+                PortfolioCalculator.NewPosition newPosition = portfolioCalculator.calculateNewPosition(payload, oldPosition);
 
-        } catch (Exception e) {
-            log.error("Failed to update account during OrdersFilled eventId={}", payload.getEventId(), e);
-            throw e;
-        }
+                PositionEntity posToSave = PositionEntity.builder()
+                    .id(pid)
+                    .netQty(newPosition.netQty())
+                    .avgPrice(newPosition.avgPrice())
+                    .build();
 
-        // Process the fills and update positions
-        try {
-            PositionEntity.PositionId pid = new PositionEntity.PositionId(payload.getAccountId(), payload.getSymbol());
-            PositionEntity oldPosition = positionsRepository.findById(pid).orElse(null);
-            PortfolioCalculator.NewPosition newPosition = portfolioCalculator.calculateNewPosition(payload, oldPosition);
+                positionsRepository.save(posToSave);
 
-            PositionEntity posToSave = PositionEntity.builder()
-                .id(pid)
-                .netQty(newPosition.netQty())
-                .avgPrice(newPosition.avgPrice())
-                .build();
-
-            positionsRepository.save(posToSave);
-
-            log.info("New position saved with id={}", posToSave.getId());
-        } catch (Exception e) {
-            log.error("Failed to update positions during OrdersFilled eventId={}", payload.getEventId(), e);
-            throw e;
-        }
+                log.info("New position saved with id={}", posToSave.getId());
+            } catch (Exception e) {
+                log.error("Failed to update positions during OrdersFilled eventId={}", payload.getEventId(), e);
+                throw e;
+            }
+        });
     }
 
 

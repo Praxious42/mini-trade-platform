@@ -52,7 +52,11 @@ class OrderFillServiceTest {
 
     @BeforeEach
     void setup() {
-        when(processedEventRecorder.markEventProcessed(any())).thenReturn(Boolean.TRUE);
+        doAnswer(invocation -> {
+            Runnable action = invocation.getArgument(2);
+            action.run();
+            return null;
+        }).when(processedEventRecorder).processIfNotProcessed(any(), anyString(), any(Runnable.class));
     }
 
     @Test

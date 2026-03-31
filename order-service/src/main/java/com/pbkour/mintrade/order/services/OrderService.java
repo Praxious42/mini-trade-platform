@@ -92,41 +92,33 @@ public class OrderService {
     public void updateFilledOrder(OrdersFilled ordersFilled) {
         log.info("Updating filled orders for {}", ordersFilled);
         UUID eventId = ordersFilled.getEventId();
-
-        if (!processedEventRecorder.markEventProcessed(eventId)) {
-            log.info("Skipping processing for already-processed eventId={}", eventId);
-            return;
-        }
-
-        UUID orderId = ordersFilled.getOrderId();
-        ordersRepository.findById(orderId).ifPresentOrElse(
-            order -> {
-                BigDecimal quantityFilled = ordersFilled.getFills().stream().map(Fill::getQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
-                log.info("Total quantity filled for orderId={} is {}", orderId, quantityFilled);
-                order.setStatus(quantityFilled.compareTo(order.getQuantity()) < 0 ? Status.PARTIALLY_FILLED : Status.FILLED);
-                ordersRepository.save(order);
-            },
-            () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)
-        );
+        processedEventRecorder.processIfNotProcessed(eventId, "OrdersFilled", () -> {
+            UUID orderId = ordersFilled.getOrderId();
+            ordersRepository.findById(orderId).ifPresentOrElse(
+                order -> {
+                    BigDecimal quantityFilled = ordersFilled.getFills().stream().map(Fill::getQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    log.info("Total quantity filled for orderId={} is {}", orderId, quantityFilled);
+                    order.setStatus(quantityFilled.compareTo(order.getQuantity()) < 0 ? Status.PARTIALLY_FILLED : Status.FILLED);
+                    ordersRepository.save(order);
+                },
+                () -> log.warn("Received OrdersFilled event for non-existent orderId={}", orderId)
+            );
+        });
     }
 
     @Transactional
     public void rejectOrder(OrdersRejected ordersRejected) {
         UUID eventId = ordersRejected.getEventId();
-
-        if (!processedEventRecorder.markEventProcessed(eventId)) {
-            log.info("Skipping processing for already-processed eventId={}", eventId);
-            return;
-        }
-
-        UUID orderId = ordersRejected.getOrderId();
-        ordersRepository.findById(orderId).ifPresentOrElse(
-            order -> {
-                order.setStatus(Status.REJECTED);
-                ordersRepository.save(order);
-            },
-            () -> log.warn("Received OrdersRejected event for non-existent orderId={}", orderId)
-        );
+        processedEventRecorder.processIfNotProcessed(eventId, "OrdersRejected", () -> {
+            UUID orderId = ordersRejected.getOrderId();
+            ordersRepository.findById(orderId).ifPresentOrElse(
+                order -> {
+                    order.setStatus(Status.REJECTED);
+                    ordersRepository.save(order);
+                },
+                () -> log.warn("Received OrdersRejected event for non-existent orderId={}", orderId)
+            );
+        });
     }
 
     public RiskCheckResponse checkRisk(Order order) {
