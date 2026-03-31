@@ -19,13 +19,21 @@ public class KafkaJsonPublisherSupport {
             return;
         }
 
+        if (topic == null || topic.isBlank()) {
+            log.warn("Skipping Kafka publish because topic is null or blank for payload type={} eventId={}",
+                payload.getClass().getSimpleName(), payload.getEventId());
+            return;
+        }
+
+        Object eventId = payload.getEventId();
         try {
             String json = objectMapper.writeValueAsString(payload);
-            kafkaTemplate.send(topic, payload.getEventId().toString(), json);
-            log.info("Sent {} event to topic {} for eventId={}", payload.getClass().getSimpleName(), topic, payload.getEventId());
+            String key = eventId != null ? eventId.toString() : null;
+            kafkaTemplate.send(topic, key, json);
+            log.info("Sent {} event to topic {} for eventId={}", payload.getClass().getSimpleName(), topic, eventId);
         } catch (Exception ex) {
             log.error("Failed to serialize or send {} to topic={} eventId={}",
-                payload.getClass().getSimpleName(), topic, payload.getEventId(), ex);
+                payload.getClass().getSimpleName(), topic, eventId, ex);
         }
     }
 }
