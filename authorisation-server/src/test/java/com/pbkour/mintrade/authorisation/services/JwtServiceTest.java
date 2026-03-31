@@ -13,7 +13,7 @@ class JwtServiceTest {
 
     @Test
     void generate_and_validate_token() throws Exception {
-        JwtService jwtService = new JwtService();
+        JwtService jwtService = new JwtService(SECRET, EXPIRATION);
 
         // Inject private fields that would normally come from @Value in a Spring context
         Field secretField = JwtService.class.getDeclaredField("secret");
