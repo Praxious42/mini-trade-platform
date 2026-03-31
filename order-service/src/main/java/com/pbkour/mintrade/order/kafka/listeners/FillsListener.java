@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.order.kafka.listeners;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +15,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class FillsListener {
-    private final ObjectMapper objectMapper;
+    private final KafkaJsonListenerSupport kafkaJsonListenerSupport;
     private final OrderService orderService;
 
     @KafkaListener(topics = "orders.filled", groupId = "order-service-group")
     public void onOrdersFilled(String message, @Header(name = "kafka_receivedMessageKey", required = false) String key) {
         try {
-            OrdersFilled payload = objectMapper.readValue(message, OrdersFilled.class);
+            OrdersFilled payload = kafkaJsonListenerSupport.deserialize(message, OrdersFilled.class);
 
             if (payload == null) {
                 log.error("[FillsListener] received null payload for orders.filled key={}", key);

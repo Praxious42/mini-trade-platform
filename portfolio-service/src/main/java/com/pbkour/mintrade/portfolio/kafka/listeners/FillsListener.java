@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.portfolio.kafka.listeners;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.kafka.OrdersFilled;
 import com.pbkour.mintrade.portfolio.services.PortfolioService;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +15,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class FillsListener {
-    private final ObjectMapper objectMapper;
+    private final KafkaJsonListenerSupport kafkaJsonListenerSupport;
     private final PortfolioService portfolioService;
 
     @KafkaListener(topics = "orders.filled", groupId = "portfolio-service-group")
     public void onOrdersFilled(String message, @Header(name = "kafka_receivedMessageKey", required = false) String key) {
         try {
-            OrdersFilled payload = objectMapper.readValue(message, OrdersFilled.class);
+            OrdersFilled payload = kafkaJsonListenerSupport.deserialize(message, OrdersFilled.class);
             log.info("[FillsListener] Received OrdersFilled Message: {}", payload);
 
             portfolioService.processOrdersFilled(payload);

@@ -1,6 +1,7 @@
 package com.pbkour.mintrade.execution.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.json.ObjectMapperFactory;
 import com.pbkour.mintrade.commons.kafka.Order;
 import com.pbkour.mintrade.commons.kafka.OrdersCreated;
@@ -41,21 +42,21 @@ class OrdersListenerTest {
 
         String json = mapper.writeValueAsString(payload);
 
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         assertDoesNotThrow(() -> listener.onOrdersCreated(json, "key-1"));
     }
 
     @Test
     void onOrdersCreated_shouldThrowOrdersListenerException() {
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         assertThrows(OrdersListener.OrdersListenerException.class, () -> listener.onOrdersCreated("not-a-json", "k"));
     }
 
     @Test
     void onDlq_handlesConsumerRecordWithoutThrowing() {
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         ConsumerRecord<String, String> record = new ConsumerRecord<>("orders.created.dlq", 0, 0L, "key-1", "{\"some\":\"payload\"}");
 
@@ -64,21 +65,21 @@ class OrdersListenerTest {
 
     @Test
     void onOrdersCreated_nullMessage_shouldNotThrow() {
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         assertDoesNotThrow(() -> listener.onOrdersCreated(null, "key-null"));
     }
 
     @Test
     void onOrdersCreated_emptyMessage_shouldNotThrow() {
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         assertDoesNotThrow(() -> listener.onOrdersCreated("", "key-empty"));
     }
 
     @Test
     void onOrdersCreated_payloadJsonNull_shouldThrowOrdersListenerException() {
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         // JSON literal null maps to Java null when deserialized
         String json = "null";
@@ -102,7 +103,7 @@ class OrdersListenerTest {
 
         String json = mapper.writeValueAsString(payload);
 
-        OrdersListener listener = new OrdersListener(mapper, orderFillService);
+        OrdersListener listener = new OrdersListener(new KafkaJsonListenerSupport(mapper), orderFillService);
 
         assertDoesNotThrow(() -> listener.onOrdersCreated(json, "key-processed"));
 

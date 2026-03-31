@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.order.kafka.listeners;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.kafka.OrdersRejected;
 import com.pbkour.mintrade.order.services.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +15,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class RejectedListener {
-    private final ObjectMapper objectMapper;
+    private final KafkaJsonListenerSupport kafkaJsonListenerSupport;
     private final OrderService orderService;
 
     @KafkaListener(topics = "orders.rejected")
     public void onOrdersRejected(String message, @Header(name = "kafka_receivedMessageKey", required = false) String key) {
         try {
-            OrdersRejected payload = objectMapper.readValue(message, OrdersRejected.class);
+            OrdersRejected payload = kafkaJsonListenerSupport.deserialize(message, OrdersRejected.class);
 
             if (payload == null) {
                 log.error("[RejectedListener] received null payload for orders.rejected key={}", key);
