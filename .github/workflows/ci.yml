@@ -33,7 +33,7 @@ jobs:
 
       - name: Build & run tests
         run: |
-          mvn -B -V -e -Dskip.bdd.tests=true clean verify
+          ./mvnw -B -V -e -Dskip.bdd.tests=true clean verify
         env:
           MAVEN_OPTS: -Xmx2g
 
