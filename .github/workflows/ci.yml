@@ -33,8 +33,21 @@ jobs:
                     echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
                     echo "TESTCONTAINERS_REUSE_ENABLE=true" >> $GITHUB_ENV
 
-            -   name: Build (Maven) - compile modules
-                run: ./mvnw -B -ntp -DskipTests=true package
+            -   name: Start infra (Docker Compose)
+                run: |
+                    docker compose -f infra/docker/docker-compose.yml up -d
+                    # wait a bit for services to register
+                    sleep 5
 
-            -   name: Test order-service only (Maven)
-                run: ./mvnw -pl order-service -am -DskipTests=false test
+            -   name: Start services (Docker Compose)
+                run: |
+                    docker compose -f infra/docker/docker-compose.services.yml up -d --build
+                    # give services a moment to become healthy
+                    sleep 10
+
+            -   name: Build + Test (Maven)
+                env:
+                    KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+                    PORTFOLIO_GRPC_HOST: localhost
+                    DB_HOST: 127.0.0.1
+                run: ./mvnw -B -ntp verify
