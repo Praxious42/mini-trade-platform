@@ -5,6 +5,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.Instant;
@@ -12,7 +13,14 @@ import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@EmbeddedKafka(partitions = 1, topics = {
+    "orders.rejected",
+    "orders.rejected.dlq",
+    "orders.filled"
+})
+@SpringBootTest(properties = {
+    "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}"
+})
 @TestPropertySource(properties = {"security.jwt.secret=MyJwtSecretKey12345MyJwtSecretKey12345MyJwtSecretKey12345", "security.jwt.expiration=3600000"})
 class JwtServiceTest {
 

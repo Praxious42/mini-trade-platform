@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -31,7 +32,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest("spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration")
+@EmbeddedKafka(partitions = 1, topics = {
+    "orders.rejected",
+    "orders.rejected.dlq",
+    "orders.filled"
+})
+@SpringBootTest(properties = {
+    "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}"
+})
 class OrderControllerIntegrationTest {
 
     private final ObjectMapper mapper = ObjectMapperFactory.create();
