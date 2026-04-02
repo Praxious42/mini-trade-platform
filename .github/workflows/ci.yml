@@ -23,14 +23,6 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Cache Maven repository (fallback)
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-m2-
-
       - name: Build & run tests
         run: |
           ./mvnw -B -V -e -Dskip.bdd.tests=true clean verify
