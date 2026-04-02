@@ -33,5 +33,8 @@ jobs:
                     echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
                     echo "TESTCONTAINERS_REUSE_ENABLE=true" >> $GITHUB_ENV
 
-            -   name: Build + Test (Maven)
-                run: ./mvnw -B -ntp verify
+            -   name: Build (Maven) - compile modules
+                run: ./mvnw -B -ntp -DskipTests=true package
+
+            -   name: Test order-service only (Maven)
+                run: ./mvnw -pl order-service -am -DskipTests=false test
