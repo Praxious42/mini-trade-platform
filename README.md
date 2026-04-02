@@ -19,7 +19,7 @@ A small event-driven trading backend built with **Java 17** and **Spring Boot**
 - **HTTP REST** public API + **gRPC** internal service-to-service calls
 - **Reliability patterns**: idempotent consumers, retries/backoff
 - **Testing discipline**: unit tests + integration tests via **Testcontainers**, plus BDD-style scenarios
-- **DevOps**: Docker Compose for local, Kubernetes manifests for deployment, GitHub Actions CI
+- **DevOps**: Docker Compose for local, GitHub Actions CI
 
 ## Services
 

@@ -63,7 +63,11 @@ class OrderServiceTest {
             .limitPrice(new BigDecimal("150.50"))
             .build();
 
-        lenient().when(processedEventRecorder.markEventProcessed(any(UUID.class))).thenReturn(true);
+        lenient().doAnswer(invocation -> {
+            Runnable action = invocation.getArgument(2);
+            action.run();
+            return null;
+        }).when(processedEventRecorder).processIfNotProcessed(any(UUID.class), anyString(), any(Runnable.class));
     }
 
     @Test

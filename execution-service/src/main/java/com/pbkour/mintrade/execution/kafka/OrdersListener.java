@@ -1,6 +1,6 @@
 package com.pbkour.mintrade.execution.kafka;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbkour.mintrade.commons.kafka.KafkaJsonListenerSupport;
 import com.pbkour.mintrade.commons.kafka.OrdersCreated;
 import com.pbkour.mintrade.execution.services.OrderFillService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class OrdersListener {
-    private final ObjectMapper objectMapper;
+    private final KafkaJsonListenerSupport kafkaJsonListenerSupport;
     private final OrderFillService orderFillService;
 
     @KafkaListener(topics = "orders.created", groupId = "execution-service-group")
@@ -26,7 +26,7 @@ public class OrdersListener {
                 return;
             }
 
-            OrdersCreated payload = objectMapper.readValue(message, OrdersCreated.class);
+            OrdersCreated payload = kafkaJsonListenerSupport.deserialize(message, OrdersCreated.class);
             if (payload == null) {
                 log.warn("[OrdersListener] failed to deserialize orders.created message with key={}", key);
                 throw new OrdersListenerException("Failed to deserialize orders.created message");

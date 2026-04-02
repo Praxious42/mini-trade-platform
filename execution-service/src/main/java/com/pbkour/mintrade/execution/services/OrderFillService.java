@@ -44,37 +44,34 @@ public class OrderFillService {
     @Transactional
     public void fillOrder(OrdersCreated payload) {
         UUID eventId = payload.getEventId();
-        if (!processedEventRecorder.markEventProcessed(eventId)) {
-            log.info("Skipping processing for already-processed eventId={}", eventId);
-            return;
-        }
+        processedEventRecorder.processIfNotProcessed(eventId, "OrdersCreated", () -> {
+            boolean accepted = ExecutionDecider.generateExecutionDecision().equals(ExecutionDecision.ACCEPTED);
+            if (!accepted) {
+                log.info("Rejecting order {} for symbol {}", payload.getOrder().getOrderId(), payload.getOrder().getSymbol());
+                rejectOrder(payload);
+                return;
+            }
+            Order order = payload.getOrder();
+            BigDecimal price = priceGenerator.generatePrice(order.getSymbol());
 
-        boolean accepted = ExecutionDecider.generateExecutionDecision().equals(ExecutionDecision.ACCEPTED);
-        if (!accepted) {
-            log.info("Rejecting order {} for symbol {}", payload.getOrder().getOrderId(), payload.getOrder().getSymbol());
-            rejectOrder(payload);
-            return;
-        }
-        Order order = payload.getOrder();
-        BigDecimal price = priceGenerator.generatePrice(order.getSymbol());
+            if (isUnfavorableLimit(order, price)) {
+                log.info("NOT filling order {} with price {}", order.getSymbol(), price);
+                return;
+            }
 
-        if (isUnfavorableLimit(order, price)) {
-            log.info("NOT filling order {} with price {}", order.getSymbol(), price);
-            return;
-        }
+            log.info("Filling order {} with price {}", order.getSymbol(), price);
+            List<BigDecimal> partialFills = ExecutionDecider.getPartialFills(order.getQuantity());
+            log.info("Fill quantities: {}", partialFills);
+            List<FillEntity> fillEntities = partialFills.stream().map(qty -> FillEntity.builder()
+                .orderId(order.getOrderId())
+                .quantity(qty)
+                .price(price)
+                .build()).toList();
 
-        log.info("Filling order {} with price {}", order.getSymbol(), price);
-        List<BigDecimal> partialFills = ExecutionDecider.getPartialFills(order.getQuantity());
-        log.info("Fill quantities: {}", partialFills);
-        List<FillEntity> fillEntities = partialFills.stream().map(qty -> FillEntity.builder()
-            .orderId(order.getOrderId())
-            .quantity(qty)
-            .price(price)
-            .build()).toList();
+            List<FillEntity> savedFillEntities = fillsRepository.saveAll(fillEntities);
 
-        List<FillEntity> savedFillEntities = fillsRepository.saveAll(fillEntities);
-
-        publisher.publishEvent(new FillsSavedEvent(savedFillEntities, order));
+            publisher.publishEvent(new FillsSavedEvent(savedFillEntities, order));
+        });
     }
 
     private void rejectOrder(OrdersCreated payload) {
