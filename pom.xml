@@ -115,6 +115,14 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.9</version>
+                <configuration>
+                    <!-- Exclude generated protobuf / gRPC classes from coverage across the multi-module build -->
+                    <excludes>
+                        <exclude>com/pbkour/mintrade/commons/RiskCheck*</exclude>
+                        <exclude>com/pbkour/mintrade/commons/*OuterClass*</exclude>
+                        <exclude>com/pbkour/mintrade/commons/*OrBuilder*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
