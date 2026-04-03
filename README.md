@@ -398,19 +398,7 @@ docker compose -f .\infra\docker\docker-compose.services.yml logs -f order-servi
 GitHub Actions workflow (suggested):
 
 - build + unit tests
-- integration tests (Testcontainers)
 - jacoco coverage
-- (optional) docker image build/push
-
-## Kubernetes
-
-A minimal `k8s/` directory provides manifests for:
-
-- Deployments + Services for each microservice
-- ConfigMaps for configuration
-- Notes in this README for running on kind/minikube
-
-(For local dev, Kafka/Postgres remain via Docker Compose unless you add Helm charts.)
 
 ## Project structure
 
