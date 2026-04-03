@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 class SecurityConfigTest {
 
     @Test
-    void authenticationManagerDelegatesToAuthenticationConfiguration() throws Exception {
+    void authenticationManagerDelegatesToAuthenticationConfiguration() {
         var jwtFilter = mock(com.pbkour.mintrade.authorisation.filters.JwtFilter.class);
         SecurityConfig cfg = new SecurityConfig(jwtFilter);
 
