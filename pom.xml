@@ -124,6 +124,7 @@
                     </execution>
                     <execution>
                         <id>report-aggregate</id>
+                        <inherited>false</inherited>
                         <goals>
                             <goal>report-aggregate</goal>
                         </goals>
@@ -141,6 +142,7 @@
                         </goals>
                         <phase>verify</phase>
                         <configuration>
+                            <skip>${maven.test.skip}</skip>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
