@@ -1,5 +1,9 @@
 name: CI
 
+env:
+  # coverage threshold is a fraction (0.75 = 75%) and is passed to Maven as -Dcoverage.threshold
+  COVERAGE_THRESHOLD: '0.75'
+
 on:
   push:
     branches:
@@ -27,7 +31,7 @@ jobs:
 
       - name: Build & run tests
         run: |
-          ./mvnw -B -V -e -Dskip.bdd.tests=true clean verify
+          ./mvnw -B -V -e -Dskip.bdd.tests=true -Djacoco.skip=false -Dcoverage.threshold=${{ env.COVERAGE_THRESHOLD }} clean verify
         env:
           MAVEN_OPTS: -Xmx2g
 
@@ -37,4 +41,17 @@ jobs:
         with:
           name: surefire-reports
           path: '**/target/surefire-reports/*.xml'
+
+      - name: Upload JaCoCo HTML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: |
+            **/target/site/jacoco/**
+            **/target/site/jacoco-aggregate/**
+            **/target/**/jacoco.xml
+
+      - name: Coverage enforced by Maven (jacoco:check)
+        run: echo "Maven executed jacoco:report-aggregate and jacoco:check during verify; threshold=${{ env.COVERAGE_THRESHOLD }}"
 

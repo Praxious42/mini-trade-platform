@@ -1,6 +1,5 @@
 package com.pbkour.mintrade.order.entities;
 
-import com.pbkour.mintrade.commons.dto.Order;
 import com.pbkour.mintrade.commons.orders.Side;
 import com.pbkour.mintrade.commons.orders.Status;
 import com.pbkour.mintrade.commons.orders.Symbol;
@@ -81,19 +80,6 @@ public class OrderEntity {
     public void preUpdate() throws OrderEntityValidationException {
         updatedAt = Instant.now();
         validate();
-    }
-
-    public Order mapToOrder() {
-        return Order.builder()
-            .accountId(this.accountId)
-            .symbol(this.symbol)
-            .side(this.side)
-            .type(this.type)
-            .quantity(this.quantity)
-            .limitPrice(this.limitPrice)
-            .createdAt(this.createdAt)
-            .updatedAt(this.updatedAt)
-            .build();
     }
 
     private void validate() throws OrderEntityValidationException {
